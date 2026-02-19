@@ -1,0 +1,553 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
+import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
+import 'package:trocabook_front/core/services/book_service.dart';
+import 'package:trocabook_front/core/services/children_service.dart';
+import 'package:trocabook_front/core/errors/exceptions.dart';
+import 'package:trocabook_front/core/models/book_category_enum.dart';
+import 'package:trocabook_front/core/config/app_colors.dart';
+
+class AddBookPageV2 extends StatefulWidget {
+  final BookCategory? initialCategory;
+
+  const AddBookPageV2({super.key, this.initialCategory});
+
+  @override
+  State<AddBookPageV2> createState() => _AddBookPageV2State();
+}
+
+class _AddBookPageV2State extends State<AddBookPageV2> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _classeController = TextEditingController();
+  final _ecoleController = TextEditingController();
+  final _annee_scolaireController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _matiereController = TextEditingController();
+  final _priceController = TextEditingController();
+
+  String? _selectedLangue;
+  String? _selectedStatut;
+  String? _selectedEtat;
+  String? _selectedChildId;
+  BookCategory _selectedCategory = BookCategory.exchange;
+  String? _selectedNeedType;
+  List<String> _selectedDesiredBooks = [];
+
+  double _lat = 0.0;
+  double _lng = 0.0;
+  bool _isLoading = false;
+
+  final BookService _bookService = BookService();
+  final ChildrenService _childrenService = ChildrenService();
+
+  List<Map<String, dynamic>> _children = [];
+  List<Map<String, dynamic>> _availableBooks = [];
+  bool _useExistingBook = false;
+  String? _selectedExistingBookId;
+
+  final List<String> _statuts = ['Disponible', 'Échange', 'Vendu', 'Réservé'];
+  final List<String> _langues = ['Français', 'Anglais', 'Espagnol'];
+  final List<String> _etats = ['Neuf', 'Très bon', 'Bon', 'Moyen', 'Usé'];
+  final List<String> _needTypes = ['Achat', 'Échange', 'Gratuit'];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCategory = widget.initialCategory ?? BookCategory.exchange;
+    _loadChildren();
+    _loadAvailableBooks();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _classeController.dispose();
+    _ecoleController.dispose();
+    _annee_scolaireController.dispose();
+    _descriptionController.dispose();
+    _matiereController.dispose();
+    _priceController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadChildren() async {
+    try {
+      final list = await _childrenService.getMyChildren();
+      if (mounted) {
+        setState(() => _children = list);
+      }
+    } catch (e) {
+      debugPrint('Failed to load children: $e');
+    }
+  }
+
+  Future<void> _loadAvailableBooks() async {
+    try {
+      final list = await _bookService.getMyBooks();
+      if (mounted) {
+        setState(() => _availableBooks = list);
+      }
+    } catch (e) {
+      debugPrint('Failed to load available books: $e');
+    }
+  }
+
+  Future<void> _addBook() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (_children.isNotEmpty && _selectedChildId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a child')));
+      return;
+    }
+
+    if (_selectedCategory == BookCategory.exchange &&
+        _selectedDesiredBooks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one desired book'),
+        ),
+      );
+      return;
+    }
+
+    if (_selectedCategory == BookCategory.sell &&
+        _priceController.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a price')));
+      return;
+    }
+
+    if (_selectedCategory == BookCategory.need && _selectedNeedType == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select need type')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // If using an existing book as the listing, update its status/category instead of creating a new book
+      if (_useExistingBook && _selectedExistingBookId != null) {
+        final existingId = _selectedExistingBookId!;
+        // Map category to statut value expected by backend
+        final statut = _selectedCategory == BookCategory.sell
+            ? 'Vente'
+            : _selectedCategory == BookCategory.exchange
+            ? 'Échange'
+            : _selectedCategory == BookCategory.donate
+            ? 'Don'
+            : 'Disponible';
+
+        await _bookService.updateBookStatus(existingId, statut);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Listing mis à jour avec votre livre existant'),
+            ),
+          );
+          context.go('/my-books');
+        }
+        return;
+      }
+
+      final enfantId =
+          _selectedChildId ??
+          (_children.isNotEmpty ? _children.first['id'] : 'enfant_123');
+
+      final bookData = {
+        'titre': _titleController.text,
+        'classe': _classeController.text,
+        'ecole': _ecoleController.text,
+        'langue': _selectedLangue ?? 'Français',
+        'annee_scolaire': _annee_scolaireController.text,
+        'statut': _selectedStatut ?? 'Disponible',
+        'localisation_lat': _lat,
+        'localisation_lng': _lng,
+        'enfant_id': enfantId,
+        'description': _descriptionController.text,
+        'matiere': _matiereController.text,
+        'etat': _selectedEtat ?? 'Bon',
+        'category': _selectedCategory.name,
+      };
+
+      // Add category-specific fields
+      if (_selectedCategory == BookCategory.sell) {
+        bookData['price'] = double.parse(_priceController.text);
+      } else if (_selectedCategory == BookCategory.exchange) {
+        bookData['desiredBooks'] = _selectedDesiredBooks;
+      } else if (_selectedCategory == BookCategory.need) {
+        bookData['needType'] = _selectedNeedType;
+      }
+
+      await _bookService.createBook(
+        titre: bookData['titre'],
+        classe: bookData['classe'],
+        ecole: bookData['ecole'],
+        langue: bookData['langue'],
+        annee_scolaire: bookData['annee_scolaire'],
+        statut: bookData['statut'],
+        localisation_lat: bookData['localisation_lat'],
+        localisation_lng: bookData['localisation_lng'],
+        enfant_id: bookData['enfant_id'],
+        description: bookData['description'],
+        matiere: bookData['matiere'],
+        etat: bookData['etat'],
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Livre ajouté avec succès')),
+        );
+        context.go('/my-books');
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.message}')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur inattendue: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          _selectedCategory == BookCategory.exchange
+              ? 'Démarrer un échange'
+              : _selectedCategory == BookCategory.sell
+              ? 'Vendre un livre'
+              : _selectedCategory == BookCategory.donate
+              ? 'Proposer un don'
+              : _selectedCategory == BookCategory.need
+              ? 'Publier un besoin'
+              : 'Ajouter un livre',
+        ),
+        backgroundColor: AppColors.primaryBlue,
+        foregroundColor: AppColors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/my-books'),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 24),
+              Text(
+                _selectedCategory == BookCategory.exchange
+                    ? 'Démarrer un échange'
+                    : _selectedCategory == BookCategory.sell
+                    ? 'Vendre un livre'
+                    : _selectedCategory == BookCategory.donate
+                    ? 'Proposer un don'
+                    : _selectedCategory == BookCategory.need
+                    ? 'Publier un besoin'
+                    : 'Ajouter un livre',
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              // Category Selection
+              const Text(
+                'Catégorie du livre *',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                children: BookCategory.values.map((category) {
+                  final isSelected = _selectedCategory == category;
+                  return FilterChip(
+                    label: Text(category.displayName),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = category;
+                        _selectedDesiredBooks.clear();
+                        _selectedNeedType = null;
+                        _priceController.clear();
+                      });
+                    },
+                    backgroundColor: AppColors.lightGray,
+                    selectedColor: AppColors.primaryBlue,
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              // Child selection
+              if (_children.isNotEmpty) ...[
+                const Text('Child'),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedChildId,
+                  items: _children
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c['id']?.toString(),
+                          child: Text(c['prenom'] ?? 'Child'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedChildId = v),
+                  decoration: InputDecoration(
+                    labelText: 'Enfant *',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              // Title
+              CustomTextField(
+                controller: _titleController,
+                label: 'Titre du livre *',
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'Le titre est requis';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Classe
+              CustomTextField(
+                controller: _classeController,
+                label: 'Classe (ex: 3e, 2nde) *',
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return 'La classe est requise';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // École
+              CustomTextField(
+                controller: _ecoleController,
+                label: 'École *',
+                validator: (value) {
+                  if (value?.isEmpty ?? true) return "L'école est requise";
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Langue
+              DropdownButtonFormField<String>(
+                value: _selectedLangue ?? 'Français',
+                items: _langues
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (value) => setState(() => _selectedLangue = value),
+                decoration: InputDecoration(
+                  labelText: 'Langue *',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Année scolaire
+              CustomTextField(
+                controller: _annee_scolaireController,
+                label: 'Année scolaire (ex: 2024-2025) *',
+                validator: (value) {
+                  if (value?.isEmpty ?? true)
+                    return 'L\'année scolaire est requise';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Description
+              CustomTextField(
+                controller: _descriptionController,
+                label: 'Description',
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              // Matière
+              CustomTextField(
+                controller: _matiereController,
+                label: 'Matière (ex: Mathématiques)',
+              ),
+              const SizedBox(height: 16),
+              // État
+              DropdownButtonFormField<String>(
+                value: _selectedEtat ?? 'Bon',
+                items: _etats
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (value) => setState(() => _selectedEtat = value),
+                decoration: InputDecoration(
+                  labelText: 'État du livre',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // CONDITIONAL FIELDS BASED ON CATEGORY
+              // Price field for SELL
+              if (_selectedCategory == BookCategory.sell) ...[
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Prix de vente',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                CustomTextField(
+                  controller: _priceController,
+                  label: 'Prix (FCFA) *',
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) return 'Le prix est requis';
+                    if (double.tryParse(value!) == null) {
+                      return 'Entrez un nombre valide';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+              // Desired books for EXCHANGE
+              if (_selectedCategory == BookCategory.exchange) ...[
+                // Option to use an existing book as the listing
+                CheckboxListTile(
+                  title: const Text(
+                    'Utiliser un de mes livres existants comme annonce',
+                  ),
+                  value: _useExistingBook,
+                  onChanged: (v) =>
+                      setState(() => _useExistingBook = v ?? false),
+                ),
+                if (_useExistingBook)
+                  DropdownButtonFormField<String>(
+                    value: _selectedExistingBookId,
+                    items: _availableBooks
+                        .map(
+                          (b) => DropdownMenuItem(
+                            value: b['id']?.toString(),
+                            child: Text(b['titre'] ?? b['title'] ?? 'Livre'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (v) =>
+                        setState(() => _selectedExistingBookId = v),
+                    decoration: InputDecoration(
+                      labelText: 'Choisir un de mes livres',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Livres souhaités en échange',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                if (!_useExistingBook && _availableBooks.isNotEmpty)
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _availableBooks.length,
+                    itemBuilder: (context, index) {
+                      final book = _availableBooks[index];
+                      final bookId = book['id']?.toString() ?? '';
+                      final isSelected = _selectedDesiredBooks.contains(bookId);
+
+                      return CheckboxListTile(
+                        title: Text(book['titre'] ?? 'Unknown'),
+                        subtitle: Text(
+                          '${book['classe']} - ${book['matiere']}',
+                        ),
+                        value: isSelected,
+                        onChanged: (selected) {
+                          setState(() {
+                            if (selected == true) {
+                              _selectedDesiredBooks.add(bookId);
+                            } else {
+                              _selectedDesiredBooks.remove(bookId);
+                            }
+                          });
+                        },
+                      );
+                    },
+                  )
+                else
+                  const Text(
+                    'Aucun livre disponible. Ajoutez un livre d\'abord.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                const SizedBox(height: 24),
+              ],
+              // Need type for NEED
+              if (_selectedCategory == BookCategory.need) ...[
+                const Divider(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Type de besoin',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _selectedNeedType,
+                  items: _needTypes
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                      .toList(),
+                  onChanged: (value) =>
+                      setState(() => _selectedNeedType = value),
+                  decoration: InputDecoration(
+                    labelText: 'Vous cherchez à *',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (_selectedCategory == BookCategory.need &&
+                        (value?.isEmpty ?? true)) {
+                      return 'Le type de besoin est requis';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+              ],
+              // Submit button
+              PrimaryButton(
+                text: 'Ajouter le livre',
+                onPressed: _addBook,
+                isLoading: _isLoading,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
