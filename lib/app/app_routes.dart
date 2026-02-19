@@ -21,6 +21,7 @@ import '../features/search/presentation/pages/search_page.dart'
 import '../features/search/presentation/pages/filters_page.dart';
 import '../features/exchange/presentation/pages/propose_exchange_page.dart';
 import '../features/exchange/presentation/pages/propose_exchange_new_page.dart';
+import '../features/exchange/presentation/pages/exchange_flow_page.dart';
 import '../features/exchange/presentation/pages/exchange_details_page.dart';
 import '../features/exchange/presentation/pages/exchanges_history_page.dart';
 import '../features/chat/presentation/pages/conversations_page.dart';
@@ -122,6 +123,10 @@ class AppRoutes {
       GoRoute(
         path: '/propose-exchange-new',
         builder: (context, state) => const ProposeExchangeNewPage(),
+      ),
+      GoRoute(
+        path: '/exchange-flow',
+        builder: (context, state) => const ExchangeFlowPage(),
       ),
       GoRoute(
         path: '/exchange-details/:exchangeId',

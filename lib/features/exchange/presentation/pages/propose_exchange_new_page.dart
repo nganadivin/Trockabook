@@ -34,46 +34,60 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
 
   void _toggleOffer(String id) {
     setState(() {
-      if (_selectedOfferedBooks.contains(id)) _selectedOfferedBooks.remove(id);
-      else _selectedOfferedBooks.add(id);
+      if (_selectedOfferedBooks.contains(id))
+        _selectedOfferedBooks.remove(id);
+      else
+        _selectedOfferedBooks.add(id);
     });
   }
 
   Future<void> _submitProposal() async {
     if (_selectedListingId == null || _selectedOfferedBooks.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Veuillez sélectionner une annonce et au moins un de vos livres')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Veuillez sélectionner une annonce et au moins un de vos livres',
+          ),
+        ),
+      );
       return;
     }
     setState(() => _isLoading = true);
     try {
-      final listingId = _selectedListingId!;
-      // Need ownerId for createTransaction - fetch transaction/listing details
-      final tx = await _transactionService.getTransactionById(listingId);
-      final ownerId = tx['userId']?.toString() ?? tx['ownerId']?.toString() ?? tx['owner']?.toString();
-      if (ownerId == null) throw ApiException('Impossible de déterminer le propriétaire de l\'annonce');
-
-      final res = await _transaction_service_create(listingId, ownerId);
+      // Create transaction with the book we're offering
+      final res = await _transaction_service_create(
+        _selectedOfferedBooks.first,
+      );
       final txId = res['id'] ?? res['_id'];
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proposition envoyée')));
-        if (txId != null) context.go('/exchange-details/$txId');
-        else Navigator.of(context).pop();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Proposition envoyée')));
+        if (txId != null)
+          context.go('/exchange-details/$txId');
+        else
+          Navigator.of(context).pop();
       }
     } on ApiException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: ${e.message}')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur: ${e.message}')));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur inattendue: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur inattendue: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<Map<String, dynamic>> _transaction_service_create(String livreId, String ownerId) async {
+  Future<Map<String, dynamic>> _transaction_service_create(
+    String livreId,
+  ) async {
     return await _transactionService.createTransaction(
       livreId: livreId,
-      userId: ownerId,
-      message: _messageCtrl.text.isEmpty ? null : _messageCtrl.text,
-      offeredBooks: _selectedOfferedBooks,
+      userId: 'current_user',
+      type: 'exchange',
     );
   }
 
@@ -89,9 +103,13 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
               child: FutureBuilder<List<dynamic>>(
                 future: _listingsFuture,
                 builder: (context, snap) {
-                  if (snap.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                  if (snap.connectionState == ConnectionState.waiting)
+                    return const Center(child: CircularProgressIndicator());
                   final items = snap.data ?? [];
-                  if (items.isEmpty) return const Center(child: Text('Aucune annonce d\'échange trouvée'));
+                  if (items.isEmpty)
+                    return const Center(
+                      child: Text('Aucune annonce d\'échange trouvée'),
+                    );
                   return ListView.builder(
                     itemCount: items.length,
                     itemBuilder: (context, i) {
@@ -100,7 +118,10 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
                       String title = '';
                       String subtitle = '';
                       if (it is Map) {
-                        id = (it['id']?.toString() ?? it['_id']?.toString() ?? '');
+                        id =
+                            (it['id']?.toString() ??
+                            it['_id']?.toString() ??
+                            '');
                         title = (it['titre'] ?? it['title'] ?? '').toString();
                         subtitle = (it['description'] ?? '').toString();
                       } else {
@@ -114,7 +135,8 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
                       return RadioListTile<String>(
                         value: id,
                         groupValue: _selectedListingId,
-                        onChanged: (v) => setState(() => _selectedListingId = v),
+                        onChanged: (v) =>
+                            setState(() => _selectedListingId = v),
                         title: Text(title),
                         subtitle: Text(subtitle),
                       );
@@ -127,30 +149,39 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
             FutureBuilder<List<Map<String, dynamic>>>(
               future: _myBooksFuture,
               builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) return const SizedBox();
+                if (snap.connectionState == ConnectionState.waiting)
+                  return const SizedBox();
                 final my = snap.data ?? [];
-                if (my.isEmpty) return const Text('Vous n\'avez pas de livres à proposer');
+                if (my.isEmpty)
+                  return const Text('Vous n\'avez pas de livres à proposer');
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Sélectionnez les livres que vous proposez'),
-                    ...my.map((b) => CheckboxListTile(
-                          title: Text(b['titre'] ?? b['title'] ?? ''),
-                          value: _selectedOfferedBooks.contains(b['id']),
-                          onChanged: (_) => _toggleOffer(b['id']?.toString() ?? ''),
-                        )),
+                    ...my.map(
+                      (b) => CheckboxListTile(
+                        title: Text(b['titre'] ?? b['title'] ?? ''),
+                        value: _selectedOfferedBooks.contains(b['id']),
+                        onChanged: (_) =>
+                            _toggleOffer(b['id']?.toString() ?? ''),
+                      ),
+                    ),
                   ],
                 );
               },
             ),
             TextField(
               controller: _messageCtrl,
-              decoration: const InputDecoration(hintText: 'Message (optionnel)'),
+              decoration: const InputDecoration(
+                hintText: 'Message (optionnel)',
+              ),
             ),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _isLoading ? null : _submitProposal,
-              child: _isLoading ? const CircularProgressIndicator() : const Text('Envoyer la proposition'),
+              child: _isLoading
+                  ? const CircularProgressIndicator()
+                  : const Text('Envoyer la proposition'),
             ),
           ],
         ),

@@ -307,7 +307,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () {
                             switch (type) {
                               case 'echanges':
-                                context.go('/add-exchange');
+                                context.go('/exchange-flow');
                                 break;
                               case 'ventes':
                                 context.go('/add-sell');
@@ -346,7 +346,7 @@ class _HomePageState extends State<HomePage> {
                   itemCount: items.length,
                   itemBuilder: (context, index) => Padding(
                     padding: const EdgeInsets.only(right: 12),
-                    child: _buildListingCard(items[index]),
+                    child: _buildListingCard(items[index], type),
                   ),
                 ),
               ),
@@ -356,7 +356,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildListingCard(Listing item) {
+  Widget _buildListingCard(Listing item, String type) {
     return Container(
       width: 260,
       height: 160,
@@ -368,7 +368,15 @@ class _HomePageState extends State<HomePage> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => context.push('/book-details/${item.id}'),
+          onTap: () {
+            switch (type) {
+              case 'echanges':
+                context.push('/propose-exchange/${item.id}');
+                break;
+              default:
+                context.push('/exchange-details/${item.id}');
+            }
+          },
           borderRadius: BorderRadius.circular(12),
           child: Row(
             children: [

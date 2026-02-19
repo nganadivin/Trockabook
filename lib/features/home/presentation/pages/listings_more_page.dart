@@ -129,7 +129,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                       onPressed: () {
                         switch (widget.type) {
                           case 'echanges':
-                            context.go('/add-exchange');
+                            context.go('/exchange-flow');
                             break;
                           case 'ventes':
                             context.go('/add-sell');

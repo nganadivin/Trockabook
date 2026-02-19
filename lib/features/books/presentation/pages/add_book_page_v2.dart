@@ -4,6 +4,7 @@ import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/children_service.dart';
+import 'package:trocabook_front/core/services/transaction_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 import 'package:trocabook_front/core/models/book_category_enum.dart';
 import 'package:trocabook_front/core/config/app_colors.dart';
@@ -41,6 +42,7 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
 
   final BookService _bookService = BookService();
   final ChildrenService _childrenService = ChildrenService();
+  final TransactionService _transactionService = TransactionService();
 
   List<Map<String, dynamic>> _children = [];
   List<Map<String, dynamic>> _availableBooks = [];
@@ -185,7 +187,7 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
         bookData['needType'] = _selectedNeedType;
       }
 
-      await _bookService.createBook(
+      final newBook = await _bookService.createBook(
         titre: bookData['titre'],
         classe: bookData['classe'],
         ecole: bookData['ecole'],
@@ -199,6 +201,33 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
         matiere: bookData['matiere'],
         etat: bookData['etat'],
       );
+
+      // For Sell/Donate/Need categories, create a transaction
+      if (_selectedCategory == BookCategory.sell ||
+          _selectedCategory == BookCategory.donate ||
+          _selectedCategory == BookCategory.need) {
+        final bookId =
+            newBook['id']?.toString() ?? newBook['_id']?.toString() ?? '';
+        if (bookId.isNotEmpty) {
+          try {
+            // Map category to transaction type
+            final transactionType = _selectedCategory == BookCategory.sell
+                ? 'sell'
+                : _selectedCategory == BookCategory.donate
+                ? 'donate'
+                : 'need';
+
+            await _transactionService.createTransaction(
+              livreId: bookId,
+              userId: 'current_user', // Backend should use authenticated user
+              type: transactionType,
+            );
+          } catch (e) {
+            debugPrint('Failed to create transaction: $e');
+            // Continue even if transaction creation fails
+          }
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -537,6 +566,101 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                   },
                 ),
                 const SizedBox(height: 24),
+                // If selected need type is "Échange", show book selection
+                if (_selectedNeedType == 'Échange') ...[
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Sélectionnez un livre à proposer en échange',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  // Checkbox to add new book or use existing
+                  CheckboxListTile(
+                    title: const Text('Ajouter un nouveau livre sur place'),
+                    value: _useExistingBook == false,
+                    onChanged: (v) => setState(() => _useExistingBook = false),
+                  ),
+                  const SizedBox(height: 8),
+                  // Filter available books: only "Disponible" status
+                  _availableBooks
+                          .where(
+                            (b) =>
+                                b['statut'] == 'Disponible' ||
+                                b['etat']?.toString().toLowerCase().contains(
+                                      'disponible',
+                                    ) ==
+                                    true,
+                          )
+                          .isNotEmpty
+                      ? CheckboxListTile(
+                          title: const Text(
+                            'Choisir parmi mes livres disponibles',
+                          ),
+                          value: _useExistingBook == true,
+                          onChanged: (v) =>
+                              setState(() => _useExistingBook = true),
+                        )
+                      : const SizedBox(),
+                  const SizedBox(height: 12),
+                  // Show dropdown if using existing book
+                  if (_useExistingBook &&
+                      _availableBooks
+                          .where(
+                            (b) =>
+                                b['statut'] == 'Disponible' ||
+                                b['etat']?.toString().toLowerCase().contains(
+                                      'disponible',
+                                    ) ==
+                                    true,
+                          )
+                          .isNotEmpty)
+                    DropdownButtonFormField<String>(
+                      value: _selectedExistingBookId,
+                      hint: const Text('Sélectionnez un livre disponible'),
+                      items: _availableBooks
+                          .where(
+                            (b) =>
+                                b['statut'] == 'Disponible' ||
+                                b['etat']?.toString().toLowerCase().contains(
+                                      'disponible',
+                                    ) ==
+                                    true,
+                          )
+                          .map(
+                            (b) => DropdownMenuItem(
+                              value: b['id']?.toString(),
+                              child: Text(
+                                '${b['titre'] ?? 'Livre'} - ${b['classe']}',
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _selectedExistingBookId = v),
+                      decoration: InputDecoration(
+                        labelText: 'Livre à proposer',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (_useExistingBook && (value?.isEmpty ?? true)) {
+                          return 'Veuillez sélectionner un livre';
+                        }
+                        return null;
+                      },
+                    )
+                  else if (_useExistingBook)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Aucun livre disponible. Ajoutez un livre d\'abord.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                ],
               ],
               // Submit button
               PrimaryButton(

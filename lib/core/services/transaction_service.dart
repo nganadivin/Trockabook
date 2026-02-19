@@ -30,22 +30,27 @@ class TransactionService {
     }
   }
 
-  /// Create a new transaction/exchange offer
+  /// Create a new transaction
   ///
-  /// `offeredBooks` can be a list of book IDs the user is offering in exchange.
+  /// Parameters:
+  /// - `livreId`: The book ID (livre_id)
+  /// - `userId`: The user ID offering the book (parent_offreur_id)
+  /// - `type`: Transaction type: 'exchange', 'sell', 'donate', 'need'
+  /// - `message`: Optional message (not sent to backend if provided based on error)
+  /// - `offeredBooks`: Not used in new backend format
   Future<Map<String, dynamic>> createTransaction({
     required String livreId,
     required String userId,
+    required String type,
     String? message,
     List<String>? offeredBooks,
   }) async {
     try {
-      final body = <String, dynamic>{'livreId': livreId, 'userId': userId};
-      if (message != null) body['message'] = message;
-      if (offeredBooks != null && offeredBooks.isNotEmpty) {
-        // backend may expect a comma separated string or array; send array
-        body['offeredBooks'] = offeredBooks;
-      }
+      final body = <String, dynamic>{
+        'livre_id': livreId,
+        'parent_offreur_id': userId,
+        'type': type,
+      };
 
       final response = await _apiClient.post('/transactions', body);
       return response.data;

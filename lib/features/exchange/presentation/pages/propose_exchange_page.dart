@@ -85,18 +85,14 @@ class _ProposeExchangePageState extends State<ProposeExchangePage> {
     });
 
     try {
-      final ownerId = _targetBook?['userId'] ?? _targetBook?['ownerId'];
-      if (ownerId == null) {
-        throw ApiException('Unable to determine book owner');
+      if (_selectedBooks.isEmpty) {
+        throw ApiException('Must select at least one book to offer');
       }
 
       final response = await _transactionService.createTransaction(
-        livreId: widget.bookId,
-        userId: ownerId.toString(),
-        message: _messageController.text.isEmpty
-            ? null
-            : _messageController.text,
-        offeredBooks: _selectedBooks,
+        livreId: _selectedBooks.first,
+        userId: 'current_user',
+        type: 'exchange',
       );
 
       if (mounted) {
