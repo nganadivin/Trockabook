@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
+import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 
 class ProposeExchangeNewPage extends StatefulWidget {
@@ -84,10 +86,22 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
   Future<Map<String, dynamic>> _transaction_service_create(
     String livreId,
   ) async {
+    // use provider to get the authenticated user instead of creating a new
+    // AuthService instance which won't have the profile loaded
+    final auth = Provider.of<AuthService>(context, listen: false);
+    final currentUserId =
+        auth.currentUser?['id']?.toString() ??
+        auth.currentUser?['_id']?.toString() ??
+        auth.currentUser?['uid']?.toString();
+    if (currentUserId == null) {
+      throw ApiException('User not authenticated');
+    }
+
     return await _transactionService.createTransaction(
       livreId: livreId,
-      userId: 'current_user',
+      userId: currentUserId,
       type: 'exchange',
+      prix: 0,
     );
   }
 

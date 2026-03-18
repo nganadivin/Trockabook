@@ -5,6 +5,7 @@ class Listing {
   final double? prix;
   final String? image;
   final String? localisation;
+  final String? ownerId;
   final DateTime? date;
 
   Listing({
@@ -15,11 +16,13 @@ class Listing {
     this.image,
     this.localisation,
     this.date,
+    required this.ownerId,
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
     return Listing(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      ownerId: json['parent_offreur_id']?.toString() ?? json['user_id']?.toString() ?? '',
       titre: json['titre'] as String? ?? json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       prix:
@@ -35,6 +38,7 @@ class Listing {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'ownerId': ownerId,
     'titre': titre,
     'description': description,
     'prix': prix,

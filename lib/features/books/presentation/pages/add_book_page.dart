@@ -34,7 +34,6 @@ class _AddBookPageState extends State<AddBookPage> {
 
   List<Map<String, dynamic>> _children = [];
 
-  final List<String> _statuts = ['Disponible', 'Échange', 'Vendu', 'Réservé'];
   final List<String> _langues = ['Français', 'Anglais', 'Espagnol'];
   final List<String> _etats = ['Neuf', 'Très bon', 'Bon', 'Moyen', 'Usé'];
 

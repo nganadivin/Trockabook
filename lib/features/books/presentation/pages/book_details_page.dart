@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/auth_service.dart';
@@ -49,7 +50,7 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                 children: [
                   const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text('Error: \\${snapshot.error}'),
+                  Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => setState(() {
@@ -82,6 +83,18 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                   height: 250,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 250,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                      child: const Icon(
+                        Icons.image,
+                        size: 80,
+                        color: Colors.grey,
+                      ),
+                    );
+                  },
                 ),
                 Padding(
                   padding: const EdgeInsets.all(24),
@@ -112,40 +125,61 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                       const SizedBox(height: 32),
                       Builder(
                         builder: (context) {
-                          final auth = AuthService();
+                          final auth = Provider.of<AuthService>(
+                            context,
+                            listen: false,
+                          );
+                          if (auth.currentUser == null) {
+                            // fire-and-forget load; UI will update once profile fetched
+                            auth.initializeUser();
+                          }
                           final currentId =
                               auth.currentUser?['id']?.toString() ??
-                              auth.currentUser?['_id']?.toString();
+                              auth.currentUser?['_id']?.toString() ??
+                              auth.currentUser?['uid']?.toString();
                           final ownerId =
                               book['userId']?.toString() ??
-                              book['ownerId']?.toString();
+                              book['ownerId']?.toString() ??
+                              book['_ownerId']?.toString();
                           final isOwner =
                               currentId != null &&
                               ownerId != null &&
                               currentId == ownerId;
-                          return PrimaryButton(
-                            text: 'Propose Exchange',
-                            onPressed: isOwner
-                                ? () {}
-                                : () => context.go(
-                                    '/propose-exchange/${widget.bookId}',
+
+                          return Column(
+                            children: [
+                              PrimaryButton(
+                                text: 'Propose Exchange',
+                                onPressed: () => context.go(
+                                  '/propose-exchange/${widget.bookId}',
+                                ),
+                              ),
+                              if (!isOwner) ...[
+                                const SizedBox(height: 16),
+                                OutlinedButton(
+                                  onPressed: () {
+                                    final ownerId =
+                                        book['userId'] ??
+                                        book['ownerId'] ??
+                                        book['_ownerId'];
+                                    if (ownerId != null) {
+                                      context.go('/public-profile/$ownerId');
+                                    }
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
+                                    ),
                                   ),
+                                  child: const Text('View Owner Profile'),
+                                ),
+                              ],
+                            ],
                           );
                         },
                       ),
-                      const SizedBox(height: 16),
-                      OutlinedButton(
-                        onPressed: () {
-                          final ownerId = book['userId'] ?? book['ownerId'];
-                          if (ownerId != null) {
-                            context.go('/public-profile/$ownerId');
-                          }
-                        },
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text('View Owner Profile'),
-                      ),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),

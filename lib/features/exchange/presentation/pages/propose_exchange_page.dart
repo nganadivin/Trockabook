@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
+import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 import 'package:go_router/go_router.dart';
 
@@ -89,10 +91,25 @@ class _ProposeExchangePageState extends State<ProposeExchangePage> {
         throw ApiException('Must select at least one book to offer');
       }
 
+      final auth = Provider.of<AuthService>(context, listen: false);
+      // ensure profile is loaded if not already
+      if (auth.currentUser == null) {
+        await auth.initializeUser();
+      }
+      final currentUserId =
+          auth.currentUser?['id']?.toString() ??
+          auth.currentUser?['_id']?.toString() ??
+          auth.currentUser?['uid']?.toString();
+
+      if (currentUserId == null) {
+        throw ApiException('User not authenticated');
+      }
+
       final response = await _transactionService.createTransaction(
         livreId: _selectedBooks.first,
-        userId: 'current_user',
+        userId: currentUserId,
         type: 'exchange',
+        prix: 0,
       );
 
       if (mounted) {

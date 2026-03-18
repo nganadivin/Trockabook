@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
+import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
+import 'package:trocabook_front/core/widgets/app_snackbar.dart';
 import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
 
 class ExchangeFlowPage extends StatefulWidget {
@@ -34,9 +37,6 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
 
   String? _selectedLangue = 'Français';
   String? _selectedEtat = 'Bon';
-  String? _selectedStatut = 'Disponible';
-
-  // Step 2: Define desired exchange
   String? _desiredBookTitle;
   String? _desiredBookClasse;
   String? _desiredBookMatiere;
@@ -94,20 +94,14 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
   void _proceedToStep2() {
     if (_useExistingBook &&
         (_selectedOfferedBookId == null || _selectedOfferedBookId!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner un livre')),
-      );
+      AppSnackbar.show(context, 'Veuillez sélectionner un livre');
       return;
     }
     if (!_useExistingBook &&
         (_titleController.text.isEmpty ||
             _classeController.text.isEmpty ||
             _ecoleController.text.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Veuillez remplir tous les champs requis'),
-        ),
-      );
+      AppSnackbar.show(context, 'Veuillez remplir tous les champs requis');
       return;
     }
     setState(() => _currentStep = 2);
@@ -119,13 +113,12 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
         (_desiredBookTitle == null ||
             _desiredBookTitle!.isEmpty ||
             _desiredBookClasse == null ||
-            _desiredBookClasse!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Veuillez spécifier le livre ou permettre les propositions',
-          ),
-        ),
+            _desiredBookClasse!.isEmpty ||
+            _desiredBookMatiere == null ||
+            _desiredBookMatiere!.isEmpty)) {
+      AppSnackbar.show(
+        context,
+        'Veuillez spécifier le livre ou permettre les propositions',
       );
       return;
     }
@@ -159,17 +152,30 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
 
       // If targeting an existing listing, send proposal to it
       if (_showTargetListings && _selectedTargetListingId != null) {
+        if (!mounted) return;
+        final auth = Provider.of<AuthService>(context, listen: false);
+        if (auth.currentUser == null) {
+          await auth.initializeUser();
+        }
+
+        final currentUserId =
+            auth.currentUser?['id']?.toString() ??
+            auth.currentUser?['_id']?.toString() ??
+            auth.currentUser?['uid']?.toString();
+        if (currentUserId == null) {
+          throw ApiException('User not authenticated');
+        }
+
         final res = await _transactionService.createTransaction(
           livreId: offeredBookId,
-          userId: 'current_user',
+          userId: currentUserId,
           type: 'exchange',
+          prix: 0,
         );
 
-        final txId = res['id'] ?? res['_id'];
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Proposition envoyée')));
+          final txId = res['id'] ?? res['_id'];
+          AppSnackbar.show(context, 'Proposition envoyée', error: false);
           if (txId != null) {
             context.go('/exchange-details/$txId');
           } else {
@@ -178,31 +184,41 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
         }
       } else {
         // Create new exchange annonce without targeting specific listing
-        final res = await _transactionService.createTransaction(
+        if (!mounted) return;
+        final auth = Provider.of<AuthService>(context, listen: false);
+        if (auth.currentUser == null) {
+          await auth.initializeUser();
+        }
+        
+        final currentUserId =
+            auth.currentUser?['id']?.toString() ??
+            auth.currentUser?['_id']?.toString() ??
+            auth.currentUser?['uid']?.toString();
+        if (currentUserId == null) {
+          throw ApiException(
+            'User not authenticated currentUser: ${auth.currentUser}',
+          );
+        }
+
+        await _transactionService.createTransaction(
           livreId: offeredBookId,
-          userId: 'current_user',
+          userId: currentUserId,
           type: 'exchange',
+          prix: 0,
         );
 
-        final txId = res['id'] ?? res['_id'];
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Annonce créée')));
+          AppSnackbar.show(context, 'Annonce créée', error: false);
           context.go('/home');
         }
       }
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur: ${e.message}')));
+        AppSnackbar.show(context, 'Erreur: ${e.message}');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur inattendue: $e')));
+        AppSnackbar.show(context, 'Erreur inattendue: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
@@ -26,11 +27,35 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
     _transactionFuture = _transactionService.getTransactionById(
       widget.exchangeId,
     );
-    // grab current user id if available
-    final auth = AuthService();
-    _currentUserId =
-        auth.currentUser?['id']?.toString() ??
-        auth.currentUser?['_id']?.toString();
+    // current user id will be obtained in didChangeDependencies where
+    // the Provider-based AuthService is available from context.
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_currentUserId == null) {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      if (auth.currentUser == null) {
+        // initializeUser may be async; load and set state when done
+        auth
+            .initializeUser()
+            .then((_) {
+              if (mounted) {
+                setState(() {
+                  _currentUserId =
+                      auth.currentUser?['id']?.toString() ??
+                      auth.currentUser?['_id']?.toString();
+                });
+              }
+            })
+            .catchError((_) {});
+      } else {
+        _currentUserId =
+            auth.currentUser?['id']?.toString() ??
+            auth.currentUser?['_id']?.toString();
+      }
+    }
   }
 
   Color _statusColor(String status) {
@@ -54,7 +79,18 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Exchange Details')),
+      appBar: AppBar(
+        title: FutureBuilder<Map<String, dynamic>>(
+          future: _transactionFuture,
+          builder: (ctx, snap) {
+            if (!snap.hasData) return const Text('Details');
+            final type = snap.data?['type']?.toString() ?? 'transaction';
+            String capitalize(String s) =>
+                s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+            return Text('${capitalize(type)} Details');
+          },
+        ),
+      ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _transactionFuture,
         builder: (context, snapshot) {
@@ -66,6 +102,9 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
           }
           final tx = snapshot.data ?? {};
           final status = tx['status']?.toString() ?? 'unknown';
+          final txType = tx['type']?.toString() ?? 'transaction';
+          String capitalize(String s) =>
+              s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
           final fromId =
               tx['fromUserId']?.toString() ?? tx['fromUser']?.toString();
           final toId = tx['toUserId']?.toString() ?? tx['toUser']?.toString();
@@ -94,7 +133,7 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Exchange Status: $status',
+                  '${capitalize(txType)} Status: $status',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: _statusColor(status),
                     fontWeight: FontWeight.bold,

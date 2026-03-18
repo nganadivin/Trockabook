@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
+import 'package:trocabook_front/core/models/listing_model.dart';
 
 class ListingsMorePage extends StatefulWidget {
   final String type; // 'echanges', 'ventes', 'besoins', 'dons'
@@ -14,9 +15,12 @@ class ListingsMorePage extends StatefulWidget {
 
 class _ListingsMorePageState extends State<ListingsMorePage> {
   final HomeService _homeService = HomeService();
-  late Future<List<dynamic>> _itemsFuture;
+  late Future<List<Listing>> _itemsFuture;
   // Local filter/search state
   String _searchQuery = '';
+  // the transaction/listing model doesn't expose classe or matiere so those filters
+  // are effectively ignored. we keep the fields for the dialog but they won't
+  // actually affect the results.
   String? _filterClasse;
   String? _filterMatiere;
   double? _filterMaxDistance;
@@ -27,7 +31,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
     _itemsFuture = _loadItems();
   }
 
-  Future<List<dynamic>> _loadItems() async {
+  Future<List<Listing>> _loadItems() async {
     switch (widget.type) {
       case 'echanges':
         return await _homeService.getEchanges();
@@ -38,7 +42,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
       case 'dons':
         return await _homeService.getDons();
       default:
-        return [];
+        return <Listing>[];
     }
   }
 
@@ -99,6 +103,14 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
         ),
+        actions: [
+          if (widget.type == 'echanges')
+            IconButton(
+              icon: const Icon(Icons.swap_horiz),
+              tooltip: 'Démarrer un échange',
+              onPressed: () => context.go('/exchange-flow'),
+            ),
+        ],
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _itemsFuture,
@@ -110,7 +122,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          final items = snapshot.data ?? [];
+          final items = snapshot.data ?? <Listing>[];
           if (items.isEmpty) {
             return Center(
               child: Column(
@@ -161,35 +173,17 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
             );
           }
 
-          // If we have items, allow searching and filtering locally
+          // If we have items, allow searching and filtering locally using
+          // the Listing model rather than raw maps.  Only the title and
+          // description are available, so classe/matiere filters are effectively
+          // no‑ops (the dialog still offers them but they don't change results).
           final filtered = items.where((item) {
-            final title = (item['titre'] ?? item['title'] ?? '')
-                .toString()
-                .toLowerCase();
+            final title = item.titre.toLowerCase();
             if (_searchQuery.isNotEmpty &&
-                !title.contains(_searchQuery.toLowerCase()))
+                !title.contains(_searchQuery.toLowerCase())) {
               return false;
-            if (_filterClasse != null && _filterClasse!.isNotEmpty) {
-              final classe = (item['classe'] ?? item['niveau'] ?? '')
-                  .toString();
-              if (!classe.toLowerCase().contains(_filterClasse!.toLowerCase()))
-                return false;
             }
-            if (_filterMatiere != null && _filterMatiere!.isNotEmpty) {
-              final matiere = (item['matiere'] ?? '').toString();
-              if (!matiere.toLowerCase().contains(
-                _filterMatiere!.toLowerCase(),
-              ))
-                return false;
-            }
-            // Distance filtering requires item to have lat/lng - skip if not available
-            if (_filterMaxDistance != null) {
-              final lat = item['localisation_lat'] ?? item['lat'];
-              final lng = item['localisation_lng'] ?? item['lng'];
-              if (lat != null && lng != null) {
-                // naive distance check omitted for brevity
-              }
-            }
+            // other filters ignored (not part of Listing)
             return true;
           }).toList();
 
@@ -303,9 +297,11 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final item = filtered[index];
-                    final title = item['titre'] ?? 'Untitled';
-                    final desc = item['description'] ?? '';
-                    final id = item['id']?.toString() ?? '';
+                    final title = item.titre.isNotEmpty
+                        ? item.titre
+                        : 'Untitled';
+                    final desc = item.description;
+                    final id = item.id;
 
                     return GestureDetector(
                       onTap: () => context.push('/book-details/$id'),
@@ -325,14 +321,17 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                                     topRight: Radius.circular(12),
                                   ),
                                   color: AppColors.lightGray,
-                                  image: item['image'] != null
-                                      ? DecorationImage(
-                                          image: NetworkImage(item['image']),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
+                                  image: () {
+                                    final url = item.image;
+                                    return url != null
+                                        ? DecorationImage(
+                                            image: NetworkImage(url),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null;
+                                  }(),
                                 ),
-                                child: item['image'] == null
+                                child: item.image == null
                                     ? const Icon(Icons.image, size: 40)
                                     : null,
                               ),

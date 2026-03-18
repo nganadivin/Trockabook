@@ -5,6 +5,7 @@ import 'package:trocabook_front/core/services/user_service.dart';
 import 'package:provider/provider.dart';
 import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
+import 'package:trocabook_front/core/widgets/app_snackbar.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -62,18 +63,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         phone: _phoneController.text,
         ville: _cityController.text,
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
+      AppSnackbar.show(context, 'Profile updated successfully', error: false);
       Navigator.of(context).pop();
     } on ApiException catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Update failed: ${e.message}')));
+      AppSnackbar.show(context, 'Update failed: ${e.message}', error: true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unexpected error: $e')));
+      AppSnackbar.show(context, 'Unexpected error: $e', error: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:dio/dio.dart';
 import '../network/api_client.dart';
 import '../errors/exceptions.dart';
@@ -93,9 +94,54 @@ class HomeService {
         items = data['transactions']; // Alternative response format
       }
 
-      return items.map((i) {
-        // Convert transaction or book to Listing
-        final map = i as Map<String, dynamic>;
+      // filter items client‑side as a safety net; server should
+      // already have applied the ?type= query parameter but occasionally
+      // the backend returns mixed types.  This ensures each section of the
+      // home page contains only the requested transaction class.
+      final filteredItems = items.where((raw) {
+        final map = raw as Map<String, dynamic>?;
+        if (map == null) return false;
+        final t = map['type']?.toString();
+        return t != null && t.toLowerCase() == type.toLowerCase();
+      }).toList();
+
+      if (kDebugMode) {
+        print(
+          '   homeService: requested "$type" got ${items.length} '
+          'items, filtered to ${filteredItems.length}',
+        );
+      }
+
+      return filteredItems.map((i) {
+        final map = i as Map<String, dynamic>?;
+        if (map == null) {
+          return Listing(id: '', titre: 'Unknown', description: '',ownerId: '');
+        }
+
+        final hasTitle = map.containsKey('titre') || map.containsKey('title');
+        if (!hasTitle) {
+          final typeStr = map['type']?.toString() ?? 'transaction';
+          final statut = map['statut']?.toString() ?? '';
+          final prixDouble = (map['prix'] as num?)?.toDouble();
+          DateTime? date;
+          if (map['date'] is String) {
+            date = DateTime.tryParse(map['date'] as String);
+          } else if (map['date_creation'] is String) {
+            date = DateTime.tryParse(map['date_creation'] as String);
+          }
+
+          return Listing(
+            id: map['id']?.toString() ?? '',
+            titre: '[$typeStr] ${map['id']?.toString() ?? ''}',
+            description: statut.isNotEmpty ? 'Statut : $statut' : '',
+            prix: prixDouble,
+            image: null,
+            localisation: map['localisation'] as String?,
+            date: date,
+            ownerId: map['parent_offreur_id']?.toString() ?? map['user_id']?.toString() ?? '',
+          );
+        }
+
         return Listing.fromJson(map);
       }).toList();
     } on DioException catch (e) {
@@ -132,16 +178,6 @@ class HomeService {
   }
 
   // Mock data methods for development
-  List<Category> _getMockCategories() {
-    return [
-      Category(id: '1', nom: 'Animaux', icone: '🐾', couleur: '#FF6B6B'),
-      Category(id: '2', nom: 'Entretien', icone: '🧼', couleur: '#4ECDC4'),
-      Category(id: '3', nom: 'Parapharm', icone: '💊', couleur: '#FFE66D'),
-      Category(id: '4', nom: 'Maison', icone: '🏠', couleur: '#95E1D3'),
-      Category(id: '5', nom: 'Beauté', icone: '💄', couleur: '#F38181'),
-    ];
-  }
-
   List<Category> _getDefaultCategories() {
     return [
       Category(
@@ -198,191 +234,6 @@ class HomeService {
         image: 'https://via.placeholder.com/300x200?text=Promotion+Recente',
         remise: 20,
         code: 'KMBI',
-      ),
-    ];
-  }
-
-  List<Listing> _getMockEchanges() {
-    return [
-      Listing(
-        id: 'echange_1',
-        titre: 'Mathématiques 3ème',
-        description: 'Manuel Maths en bon état, cherche Français',
-        prix: null,
-        image: null,
-        localisation: 'Etoudi',
-        date: DateTime.now(),
-      ),
-      Listing(
-        id: 'echange_2',
-        titre: 'SVT Lycée',
-        description:
-            'Livre SVT complet avec exercices, troquer contre Physique',
-        prix: null,
-        image: null,
-        localisation: 'Ekounou',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Listing(
-        id: 'echange_3',
-        titre: 'Espagnol Lycée',
-        description:
-            'Livre SVT complet avec exercices, troquer contre Physique',
-        prix: null,
-        image: 'https://via.placeholder.com/300x200?text=Espagnol',
-        localisation: 'Lyon',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Listing(
-        id: 'echange_4',
-        titre: 'Chimie Lycée',
-        description:
-            'Livre SVT complet avec exercices, troquer contre Physique',
-        prix: null,
-        image: 'https://via.placeholder.com/300x200?text=Chimie',
-        localisation: 'Bonnamoussadi',
-        date: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ];
-  }
-
-  List<Listing> _getMockVentes() {
-    return [
-      Listing(
-        id: 'vente_1',
-        titre: 'Harry Potter Tome 1',
-        description: 'Édition jeunesse excellent état, jamais lu',
-        prix: 8.5,
-        image: 'https://via.placeholder.com/300x200?text=Harry+Potter',
-        localisation: 'Marseille',
-        date: DateTime.now(),
-      ),
-      Listing(
-        id: 'vente_2',
-        titre: 'Dictionnaire Larousse',
-        description: 'Dictionnaire complet édition 2023',
-        prix: 15.0,
-        image: null,
-        localisation: 'Toulouse',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Listing(
-        id: 'vente_3',
-        titre: 'Cahiers de révisions Bac',
-        description: 'Lot 5 cahiers résumés avec fiches',
-        prix: 20.0,
-        image: null,
-        localisation: 'Bordeaux',
-        date: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      Listing(
-        id: 'vente_4',
-        titre: 'Cahiers de révisions CEP',
-        description: '9 Fiches de revisions pour le CEP',
-        prix: 20.0,
-        image: 'https://via.placeholder.com/300x200?text=CEP',
-        localisation: 'Bordeaux',
-        date: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      Listing(
-        id: 'vente_5',
-        titre: 'Livre de chimie',
-        description: 'Lot 7 cahiers résumés avec fiches',
-        prix: 20.0,
-        image: 'https://via.placeholder.com/300x200?text=Chimie+Livre',
-        localisation: 'Bordeaux',
-        date: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-    ];
-  }
-
-  List<Listing> _getMockBesoins() {
-    return [
-      Listing(
-        id: 'besoin_1',
-        titre: 'Cherche Français 4ème',
-        description: 'Manuel Français niveau 4ème urgent',
-        prix: null,
-        image: null,
-        localisation: 'Paris 15e',
-        date: DateTime.now(),
-      ),
-      Listing(
-        id: 'besoin_2',
-        titre: 'Besoin livres histoire-géo',
-        description: 'Manuels histoire-géo 2nde pour révisions',
-        prix: null,
-        image: null,
-        localisation: 'Lille',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Listing(
-        id: 'besoin_3',
-        titre: 'Besoin livres physique',
-        description: 'Manuels histoire-géo 2nde pour révisions',
-        prix: null,
-        image: 'https://via.placeholder.com/300x200?text=Physique',
-        localisation: 'Yaounde | bastos',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Listing(
-        id: 'besoin_4',
-        titre: 'Besoin Cahier de revision en chimie',
-        description: 'Manuels de revision en chimie',
-        prix: null,
-        image: null,
-        localisation: 'douala',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Listing(
-        id: 'besoin_5',
-        titre: 'Besoin livres histoire-géo',
-        description: 'Manuels histoire-géo 2nde pour révisions',
-        prix: null,
-        image: null,
-        localisation: 'Lille',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Listing(
-        id: 'besoin_6',
-        titre: 'Besoin livres histoire-géo',
-        description: 'Manuels histoire-géo 2nde pour révisions',
-        prix: null,
-        image: 'https://via.placeholder.com/300x200?text=HistoireGeo3',
-        localisation: 'Lille',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
-  }
-
-  List<Listing> _getMockDons() {
-    return [
-      Listing(
-        id: 'don_1',
-        titre: 'Lot 10 livres enfants',
-        description: 'Albums jeunesse, histoires courtes gratuits à récupérer',
-        prix: null,
-        image: null,
-        localisation: 'Nantes',
-        date: DateTime.now(),
-      ),
-      Listing(
-        id: 'don_2',
-        titre: 'Encyclopédie jeunesse',
-        description: 'Encyclopédie complète 5 tomes à donner',
-        prix: null,
-        image: null,
-        localisation: 'Strasbourg',
-        date: DateTime.now().subtract(const Duration(days: 5)),
-      ),
-      Listing(
-        id: 'don_3',
-        titre: ' Amour et passion',
-        description: 'Roman sur des histoires amoureuses',
-        prix: null,
-        image: null,
-        localisation: 'Bonamoussadi',
-        date: DateTime.now().subtract(const Duration(days: 5)),
       ),
     ];
   }

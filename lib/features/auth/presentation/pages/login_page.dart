@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/utils/validators.dart';
+import 'package:trocabook_front/core/widgets/app_snackbar.dart';
 import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
 
@@ -45,9 +46,8 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+        // use new helper to display a nicely styled notification box
+        AppSnackbar.show(context, 'Login failed: $e', error: true);
       }
     } finally {
       if (mounted) {

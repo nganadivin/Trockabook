@@ -34,6 +34,24 @@ class _FiltersPageState extends State<FiltersPage> {
     'Anglais',
     'Physique-Chimie',
   ];
+  final List<String> _category = [
+    'All',
+    'Mathématiques',
+    'Français',
+    'SVT',
+    'Histoire-Géo',
+    'Anglais',
+    'Physique-Chimie',
+  ];
+  final List<String> _role = [
+    'All',
+    'echange',
+    'dons',
+    'vente',
+  ];
+  final List<String> _auteur = ['All', 'echange', 'dons', 'vente'];
+  final List<String> _proprietaire = ['All', 'echange', 'dons', 'vente'];
+  final List<String> _edition = ['All', 'echange', 'dons', 'vente'];
 
   @override
   Widget build(BuildContext context) {
@@ -76,13 +94,58 @@ class _FiltersPageState extends State<FiltersPage> {
                   .toList(),
               onChanged: (value) => setState(() => _selectedSubject = value),
             ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedSubject,
+              decoration: const InputDecoration(
+                labelText: 'Subject',
+                border: OutlineInputBorder(),
+              ),
+              items: _subjects
+                  .map(
+                    (subject) =>
+                        DropdownMenuItem(value: subject, child: Text(subject)),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _selectedSubject = value),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedSubject,
+              decoration: const InputDecoration(
+                labelText: 'Subject',
+                border: OutlineInputBorder(),
+              ),
+              items: _subjects
+                  .map(
+                    (subject) =>
+                        DropdownMenuItem(value: subject, child: Text(subject)),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _selectedSubject = value),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedSubject,
+              decoration: const InputDecoration(
+                labelText: 'Subject',
+                border: OutlineInputBorder(),
+              ),
+              items: _subjects
+                  .map(
+                    (subject) =>
+                        DropdownMenuItem(value: subject, child: Text(subject)),
+                  )
+                  .toList(),
+              onChanged: (value) => setState(() => _selectedSubject = value),
+            ),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: const Text('Annuler'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -91,7 +154,7 @@ class _FiltersPageState extends State<FiltersPage> {
                       'subject': _selectedSubject,
                     });
                   },
-                  child: const Text('Apply'),
+                  child: const Text('Appliquer'),
                 ),
               ],
             ),
@@ -112,6 +175,7 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   final _searchController = TextEditingController();
   final BookService _bookService = BookService();
+  String? _selectedCategory = 'All';
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -139,12 +203,48 @@ class _SearchPageState extends State<SearchPage> {
     'Anglais',
     'Physique-Chimie',
   ];
+  final List<String> _Categories = [
+    'All',
+    'bords',
+    'manuels',
+    'ecole',
+    'maternelle',
+    'lycee'
+  ];
 
   @override
   void initState() {
-    super.initState();
-    _searchBooks();
+   super.initState();
   }
+
+   
+bool _isInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (!_isInitialized) {
+      final uri = GoRouterState.of(context).uri;
+      _selectedCategory = uri.queryParameters['category'];
+
+      _searchBooks();
+
+      _isInitialized = true;
+    }
+  }
+
+  //  void _performSearch({String? category}) {
+  //   // Check if category is present before searching
+  //   if (category != null && category.isNotEmpty) {
+  //     // Implement your search logic here, filtering by category
+  //     // e.g., call a service to fetch results based on category
+  //     print('Searching with category: $category');
+  //   } else {
+  //     // Handle case where no category is provided (e.g., general search)
+  //     print('No category specified, performing general search');
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -161,9 +261,15 @@ class _SearchPageState extends State<SearchPage> {
       final query = _searchController.text.trim();
       List<Map<String, dynamic>> results;
       if (query.isEmpty) {
-        results = [];
+        results = await _bookService.searchBooks("");
       } else {
         results = await _bookService.searchBooks(query);
+      }
+       if (_selectedCategory != null && _selectedCategory != 'All') {
+        results = results.where((b) {
+          final category = b['category']?.toString() ?? '';
+          return category.contains(_selectedCategory.toString());
+        }).toList();
       }
       // apply filters locally
       if (_selectedGrade != 'All') {
@@ -200,7 +306,10 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recherche'),
+
+        title: _selectedCategory != null
+            ? Text('Categorie : ${_selectedCategory!}')
+            : const Text('Recherche'),
         backgroundColor: AppColors.primaryBlue,
         foregroundColor: AppColors.white,
         elevation: 0,
@@ -232,7 +341,7 @@ class _SearchPageState extends State<SearchPage> {
                 TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search books...',
+                    hintText: 'Faites une recherche...',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -241,8 +350,35 @@ class _SearchPageState extends State<SearchPage> {
                   onSubmitted: (_) => _searchBooks(),
                 ),
                 const SizedBox(height: 16),
+                // if (_selectedCategory != null) {
+                //   Text('Search in ${_selectedCategory!}'),
+                // } else {
+                  
+                // },
                 Row(
                   children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCategory == null ? 'All' : _selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _Categories
+                            .map(
+                              (category) => DropdownMenuItem(
+                                value: category,
+                                child: Text(category),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) => {
+                          setState(() => _selectedCategory = value!),
+                          _searchBooks(),
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _selectedGrade,
@@ -258,8 +394,10 @@ class _SearchPageState extends State<SearchPage> {
                               ),
                             )
                             .toList(),
-                        onChanged: (value) =>
+                        onChanged: (value) => {
                             setState(() => _selectedGrade = value!),
+                            _searchBooks(),
+                      },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -278,8 +416,10 @@ class _SearchPageState extends State<SearchPage> {
                               ),
                             )
                             .toList(),
-                        onChanged: (value) =>
+                        onChanged: (value) =>{
                             setState(() => _selectedSubject = value!),
+                            _searchBooks()
+                            },
                       ),
                     ),
                   ],
@@ -313,29 +453,29 @@ class _SearchPageState extends State<SearchPage> {
                 : _books.isEmpty
                 ? Column(
                     children: [
-                      const SizedBox(height: 24),
-                      const Text('No results, showing samples:'),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: 3,
-                          itemBuilder: (context, index) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: BookCard(
-                                title: 'Sample Book ${index + 1}',
-                                author: 'Author ${index + 1}',
-                                imageUrl: 'https://via.placeholder.com/150',
-                                grade: '5e',
-                                subject: 'Mathématiques',
-                                condition: 'Bon état',
-                                onTap: () {},
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+                      const SizedBox(height: 60),
+                      const Text('Aucun resultat, veuillez essayer une autre recherche'),
+                      // const SizedBox(height: 16),
+                      // Expanded(
+                      //   child: ListView.builder(
+                      //     padding: const EdgeInsets.symmetric(horizontal: 16),
+                      //     itemCount: 3,
+                      //     itemBuilder: (context, index) {
+                      //       return Padding(
+                      //         padding: const EdgeInsets.only(bottom: 16),
+                      //         child: BookCard(
+                      //           title: 'Sample Book ${index + 1}',
+                      //           author: 'Author ${index + 1}',
+                      //           imageUrl: 'https://via.placeholder.com/150',
+                      //           grade: '5e',
+                      //           subject: 'Mathématiques',
+                      //           condition: 'Bon état',
+                      //           onTap: () {},
+                      //         ),
+                      //       );
+                      //     },
+                      //   ),
+                      // ),
                     ],
                   )
                 : ListView.builder(

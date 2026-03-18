@@ -109,7 +109,9 @@ class _MyBooksPageState extends State<MyBooksPage> {
                 child: BookCard(
                   title: book['titre'] ?? 'Unknown',
                   author: book['auteur'] ?? 'Unknown',
-                  imageUrl: book['image'] ?? 'https://via.placeholder.com/150',
+                  imageUrl: ((book['image'] as String?)?.isNotEmpty == true)
+                      ? book['image'] as String
+                      : 'https://via.placeholder.com/150',
                   grade: book['niveau'] ?? 'N/A',
                   subject: book['matiere'] ?? 'N/A',
                   condition: book['etat'] ?? 'N/A',

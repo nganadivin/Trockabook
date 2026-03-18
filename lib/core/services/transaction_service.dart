@@ -1,12 +1,32 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../network/api_client.dart';
 import '../errors/exceptions.dart';
 
 class TransactionService {
-  final ApiClient _apiClient = ApiClient();
+  final ApiClient _apiClient;
+
+  /// Allows passing a custom [ApiClient] for testing or configuration.
+  TransactionService([ApiClient? apiClient])
+    : _apiClient = apiClient ?? ApiClient();
 
   /// Get all transactions for current user
   Future<List<Map<String, dynamic>>> getMyTransactions() async {
+    try {
+      final response = await _apiClient.get('/transactions');
+      final List<dynamic> transactions = response.data is List
+          ? response.data
+          : response.data['transactions'] ?? [];
+      return List<Map<String, dynamic>>.from(
+        transactions.map((t) => Map<String, dynamic>.from(t as Map)),
+      );
+    } on DioException catch (e) {
+      throw ApiException(e.message ?? 'Failed to fetch transactions');
+    }
+  }
+
+  /// Get all transactions for all user
+  Future<List<Map<String, dynamic>>> getAllTransactions() async {
     try {
       final response = await _apiClient.get('/transactions');
       final List<dynamic> transactions = response.data is List
@@ -42,6 +62,7 @@ class TransactionService {
     required String livreId,
     required String userId,
     required String type,
+    double? prix,
     String? message,
     List<String>? offeredBooks,
   }) async {
@@ -52,10 +73,33 @@ class TransactionService {
         'type': type,
       };
 
+      // older fields kept for reference; they are ignored by backend
+      if (message != null && message.isNotEmpty) {
+        body['message'] = message;
+      }
+      if (offeredBooks != null && offeredBooks.isNotEmpty) {
+        body['offeredBooks'] = offeredBooks;
+      }
+
+      // price is mandatory for the new backend contract; default to 0
+      // for exchanges and allow override for sells/donations/needs.
+      body['prix'] = prix ?? (type == 'exchange' ? 0 : 0);
+
+      // log final body before sending so reproduction is straightforward
+      if (kDebugMode) {
+        print('    -> Transaction payload: $body');
+      }
+
       final response = await _apiClient.post('/transactions', body);
       return response.data;
     } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Failed to create transaction');
+      final status = e.response?.statusCode;
+      final respData = e.response?.data;
+      final errMsg = StringBuffer();
+      errMsg.write(e.message ?? 'Failed to create transaction');
+      if (status != null) errMsg.write(' (status $status)');
+      if (respData != null) errMsg.write(' → $respData');
+      throw ApiException(errMsg.toString());
     }
   }
 

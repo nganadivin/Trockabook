@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/children_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
+import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 import 'package:trocabook_front/core/models/book_category_enum.dart';
 import 'package:trocabook_front/core/config/app_colors.dart';
@@ -29,7 +31,6 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
   final _priceController = TextEditingController();
 
   String? _selectedLangue;
-  String? _selectedStatut;
   String? _selectedEtat;
   String? _selectedChildId;
   BookCategory _selectedCategory = BookCategory.exchange;
@@ -49,7 +50,6 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
   bool _useExistingBook = false;
   String? _selectedExistingBookId;
 
-  final List<String> _statuts = ['Disponible', 'Échange', 'Vendu', 'Réservé'];
   final List<String> _langues = ['Français', 'Anglais', 'Espagnol'];
   final List<String> _etats = ['Neuf', 'Très bon', 'Bon', 'Moyen', 'Usé'];
   final List<String> _needTypes = ['Achat', 'Échange', 'Gratuit'];
@@ -168,7 +168,7 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
         'ecole': _ecoleController.text,
         'langue': _selectedLangue ?? 'Français',
         'annee_scolaire': _annee_scolaireController.text,
-        'statut': _selectedStatut ?? 'Disponible',
+        'statut': 'Disponible',
         'localisation_lat': _lat,
         'localisation_lng': _lng,
         'enfant_id': enfantId,
@@ -217,11 +217,22 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                 ? 'donate'
                 : 'need';
 
-            await _transactionService.createTransaction(
-              livreId: bookId,
-              userId: 'current_user', // Backend should use authenticated user
-              type: transactionType,
-            );
+            final auth = Provider.of<AuthService>(context, listen: false);
+            if (auth.currentUser == null) {
+              await auth.initializeUser();
+            }
+            final currentUserId =
+                auth.currentUser?['id']?.toString() ??
+                auth.currentUser?['_id']?.toString() ??
+                auth.currentUser?['uid']?.toString();
+            if (currentUserId != null) {
+              await _transactionService.createTransaction(
+                livreId: bookId,
+                userId: currentUserId,
+                type: transactionType,
+                prix: 0,
+              );
+            }
           } catch (e) {
             debugPrint('Failed to create transaction: $e');
             // Continue even if transaction creation fails
