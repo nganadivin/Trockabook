@@ -1,11 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:trocabook_front/core/providers/theme_provider.dart';
 
 class SettingsPage1 extends StatelessWidget {
   const SettingsPage1({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -25,8 +28,8 @@ class SettingsPage1 extends StatelessWidget {
                     title: "Dark Mode",
                     icon: CupertinoIcons.moon,
                     trailing: CupertinoSwitch(
-                      value: false,
-                      onChanged: (value) {},
+                      value: themeProvider.isDarkMode,
+                      onChanged: (value) => themeProvider.setDarkMode(value),
                     ),
                   ),
                   const _CustomListTile(

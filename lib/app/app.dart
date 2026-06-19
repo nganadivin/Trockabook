@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:trocabook_front/core/providers/theme_provider.dart';
 import 'app_routes.dart';
 import 'app_theme.dart';
 
@@ -16,11 +18,12 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeProvider>().themeMode;
     return MaterialApp.router(
       title: 'Trocabook',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
+      themeMode: themeMode,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [
