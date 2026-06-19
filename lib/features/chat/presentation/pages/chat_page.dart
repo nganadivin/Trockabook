@@ -57,12 +57,14 @@ class _ChatPageState extends State<ChatPage> {
         widget.exchangeId,
         contenu: _messageController.text,
       );
+      if (!mounted) return;
       // refresh
       setState(() {
         _messagesFuture = _chatService.getChatMessages(widget.exchangeId);
       });
       _messageController.clear();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
@@ -120,7 +122,7 @@ class _ChatPageState extends State<ChatPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: \\${snapshot.error}'));
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 final messages = snapshot.data ?? [];
                 if (messages.isEmpty) {

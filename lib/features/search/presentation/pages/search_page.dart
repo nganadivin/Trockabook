@@ -124,15 +124,17 @@ bool _isInitialized = false;
           return subj.contains(_selectedSubject);
         }).toList();
       }
+      if (!mounted) return;
       setState(() {
         _books = results;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
       });
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -165,7 +167,7 @@ bool _isInitialized = false;
                   .push<Map<String, String?>>(
                     MaterialPageRoute(builder: (_) => const FiltersPage()),
                   );
-              if (result != null) {
+              if (result != null && mounted) {
                 _applyFilters(result);
               }
             },
@@ -281,7 +283,7 @@ bool _isInitialized = false;
                           color: Colors.red,
                         ),
                         const SizedBox(height: 16),
-                        Text('Error: \\$_errorMessage'),
+                        Text('Error: $_errorMessage'),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _searchBooks,

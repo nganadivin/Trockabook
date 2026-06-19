@@ -98,7 +98,7 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: \\${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
           final tx = snapshot.data ?? {};
           final status = tx['status']?.toString() ?? 'unknown';
@@ -228,12 +228,14 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
           status: newStatus,
         );
       }
+      if (!mounted) return;
       setState(() {
         _transactionFuture = _transactionService.getTransactionById(
           widget.exchangeId,
         );
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -263,20 +265,23 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
     try {
       myBooks = await _bookService.getMyBooks();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to load your books: $e')));
       return;
     }
 
+    if (!mounted) return;
+
     List<String> selected = [];
-    TextEditingController msgCtrl = TextEditingController();
+    final msgCtrl = TextEditingController();
 
     await showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (dialogContext, setDialogState) {
             return AlertDialog(
               title: const Text('Negotiate – select books'),
               content: SizedBox(
@@ -294,7 +299,7 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
                             title: Text(title),
                             value: selected.contains(id),
                             onChanged: (v) {
-                              setState(() {
+                              setDialogState(() {
                                 if (v == true) {
                                   selected.add(id);
                                 } else {
@@ -320,26 +325,28 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
               actions: [
                 TextButton(
                   child: const Text('Cancel'),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
                 ElevatedButton(
                   child: const Text('Send'),
                   onPressed: () async {
                     if (selected.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
                         const SnackBar(
                           content: Text('Select at least one book'),
                         ),
                       );
                       return;
                     }
+                    final navigator = Navigator.of(dialogContext);
                     try {
-                      Navigator.of(context).pop();
                       await _transactionService.negotiateTransaction(
                         widget.exchangeId,
                         proposedBooks: selected,
                         message: msgCtrl.text.isEmpty ? null : msgCtrl.text,
                       );
+                      navigator.pop();
+                      if (!mounted) return;
                       setState(() {
                         _transactionFuture = _transactionService
                             .getTransactionById(widget.exchangeId);
@@ -348,7 +355,7 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
                         const SnackBar(content: Text('Counteroffer sent')),
                       );
                     } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
                         SnackBar(content: Text('Negotiation failed: $e')),
                       );
                     }
@@ -360,5 +367,7 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
         );
       },
     );
+
+    msgCtrl.dispose();
   }
 }
