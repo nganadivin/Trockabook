@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:trocabook_front/core/services/home_service.dart';
+import 'package:trocabook_front/core/models/listing_model.dart';
 
 class NeedsPage extends StatefulWidget {
   const NeedsPage({super.key});
@@ -8,41 +11,19 @@ class NeedsPage extends StatefulWidget {
 }
 
 class _NeedsPageState extends State<NeedsPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _authorController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final HomeService _homeService = HomeService();
+  late Future<List<Listing>> _needsFuture;
 
-  String _selectedCategory = 'Fiction';
-  final List<String> _categories = [
-    'Fiction',
-    'Non-Fiction',
-    'Children',
-    'Educational',
-    'Science',
-    'History',
-    'Biography',
-    'Other',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _needsFuture = _homeService.getBesoins();
+  }
 
-  final List<Map<String, dynamic>> _needs = [
-    {
-      'title': 'Harry Potter and the Philosopher\'s Stone',
-      'author': 'J.K. Rowling',
-      'category': 'Fiction',
-      'description': 'Looking for a good condition copy for my child.',
-      'postedBy': 'Jane Smith',
-      'postedDate': '2 days ago',
-    },
-    {
-      'title': 'Introduction to Algorithms',
-      'author': 'Cormen et al.',
-      'category': 'Educational',
-      'description': 'Need this for my computer science studies.',
-      'postedBy': 'John Doe',
-      'postedDate': '1 week ago',
-    },
-  ];
+  void _refresh() {
+    if (!mounted) return;
+    setState(() => _needsFuture = _homeService.getBesoins());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,43 +32,51 @@ class _NeedsPageState extends State<NeedsPage> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              itemCount: _needs.length,
-              itemBuilder: (context, index) {
-                final need = _needs[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: ListTile(
-                    title: Text(need['title']),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            child: FutureBuilder<List<Listing>>(
+              future: _needsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('Author: ${need['author']}'),
-                        Text('Category: ${need['category']}'),
-                        Text(need['description']),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Posted by ${need['postedBy']} • ${need['postedDate']}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                        Text('Erreur: ${snapshot.error}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _refresh,
+                          child: const Text('Réessayer'),
                         ),
                       ],
                     ),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        // Offer book
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Book offered!')),
-                        );
-                      },
-                      child: const Text('Offer'),
-                    ),
-                  ),
+                  );
+                }
+
+                final needs = snapshot.data ?? [];
+                if (needs.isEmpty) {
+                  return const Center(child: Text('Aucun besoin publié'));
+                }
+
+                return ListView.builder(
+                  itemCount: needs.length,
+                  itemBuilder: (context, index) {
+                    final need = needs[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          need.titre.isNotEmpty ? need.titre : 'Sans titre',
+                        ),
+                        subtitle: Text(need.description),
+                        onTap: () => context.push('/book-details/${need.id}'),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -95,106 +84,12 @@ class _NeedsPageState extends State<NeedsPage> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-              onPressed: _showAddNeedDialog,
+              onPressed: () => context.go('/add-need'),
               child: const Text('Post a Need'),
             ),
           ),
         ],
       ),
     );
-  }
-
-  void _showAddNeedDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Post a Book Need'),
-        content: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Book Title'),
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter a title' : null,
-                ),
-                TextFormField(
-                  controller: _authorController,
-                  decoration: const InputDecoration(labelText: 'Author'),
-                  validator: (value) =>
-                      value?.isEmpty ?? true ? 'Please enter an author' : null,
-                ),
-                DropdownButtonFormField<String>(
-                  value: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Category'),
-                  items: _categories.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value!;
-                    });
-                  },
-                ),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  maxLines: 3,
-                  validator: (value) => value?.isEmpty ?? true
-                      ? 'Please enter a description'
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(onPressed: _submitNeed, child: const Text('Post')),
-        ],
-      ),
-    );
-  }
-
-  void _submitNeed() {
-    if (_formKey.currentState?.validate() ?? false) {
-      setState(() {
-        _needs.insert(0, {
-          'title': _titleController.text,
-          'author': _authorController.text,
-          'category': _selectedCategory,
-          'description': _descriptionController.text,
-          'postedBy': 'You',
-          'postedDate': 'Just now',
-        });
-      });
-
-      _titleController.clear();
-      _authorController.clear();
-      _descriptionController.clear();
-
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Book need posted successfully!')),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _authorController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }

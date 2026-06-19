@@ -1,34 +1,79 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trocabook_front/core/services/additional_services.dart';
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Mock notifications data
-    final notifications = [
-      {
-        'title': 'New exchange proposal',
-        'message':
-            'John Doe proposed an exchange for your book "Harry Potter".',
-        'time': '2 hours ago',
-        'isRead': false,
-      },
-      {
-        'title': 'Exchange accepted',
-        'message': 'Your exchange with Jane Smith has been accepted.',
-        'time': '1 day ago',
-        'isRead': true,
-      },
-      {
-        'title': 'Book rating received',
-        'message': 'You received a 5-star rating from Michael Johnson.',
-        'time': '3 days ago',
-        'isRead': true,
-      },
-    ];
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
 
+class _NotificationsPageState extends State<NotificationsPage> {
+  final NotificationService _notificationService = NotificationService();
+  late Future<List<Map<String, dynamic>>> _notificationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationsFuture = _notificationService.getNotifications();
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    setState(() {
+      _notificationsFuture = _notificationService.getNotifications();
+    });
+  }
+
+  bool _isRead(Map<String, dynamic> n) =>
+      n['isRead'] == true || n['lu'] == true || n['read'] == true;
+
+  String _title(Map<String, dynamic> n) =>
+      (n['title'] ?? n['titre'] ?? 'Notification').toString();
+
+  String _message(Map<String, dynamic> n) =>
+      (n['message'] ?? n['contenu'] ?? n['body'] ?? '').toString();
+
+  String _time(Map<String, dynamic> n) =>
+      (n['time'] ?? n['createdAt'] ?? n['date'] ?? '').toString();
+
+  String? _id(Map<String, dynamic> n) =>
+      n['id']?.toString() ?? n['_id']?.toString();
+
+  Future<void> _markAsRead(Map<String, dynamic> notification) async {
+    final id = _id(notification);
+    if (id == null || _isRead(notification)) return;
+    try {
+      await _notificationService.markAsRead(id);
+      _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossible de marquer comme lu: $e')),
+      );
+    }
+  }
+
+  Future<void> _markAllAsRead(List<Map<String, dynamic>> notifications) async {
+    final unread = notifications.where((n) => !_isRead(n)).toList();
+    if (unread.isEmpty) return;
+    try {
+      for (final n in unread) {
+        final id = _id(n);
+        if (id != null) await _notificationService.markAsRead(id);
+      }
+      _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
@@ -37,60 +82,86 @@ class NotificationsPage extends StatelessWidget {
           onPressed: () => context.go('/home'),
         ),
         actions: [
-          TextButton(
-            onPressed: () {
-              // Mark all as read
-            },
-            child: const Text('Mark all read'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // Show options
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _notificationsFuture,
+            builder: (context, snapshot) {
+              final notifications = snapshot.data ?? [];
+              return TextButton(
+                onPressed: notifications.isEmpty
+                    ? null
+                    : () => _markAllAsRead(notifications),
+                child: const Text('Mark all read'),
+              );
             },
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final notification = notifications[index];
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: notification['isRead'] as bool
-                  ? Colors.grey
-                  : Theme.of(context).primaryColor,
-              child: Icon(
-                notification['isRead'] as bool
-                    ? Icons.notifications
-                    : Icons.notifications_active,
-                color: Colors.white,
-              ),
-            ),
-            title: Text(notification['title'] as String),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(notification['message'] as String),
-                const SizedBox(height: 4),
-                Text(
-                  notification['time'] as String,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-            trailing: notification['isRead'] as bool
-                ? null
-                : Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      shape: BoxShape.circle,
-                    ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _notificationsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Erreur: ${snapshot.error}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _refresh,
+                    child: const Text('Réessayer'),
                   ),
-            onTap: () {
-              // Navigate to relevant page
+                ],
+              ),
+            );
+          }
+
+          final notifications = snapshot.data ?? [];
+          if (notifications.isEmpty) {
+            return const Center(child: Text('Aucune notification'));
+          }
+
+          return ListView.builder(
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notification = notifications[index];
+              final isRead = _isRead(notification);
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: isRead
+                      ? Colors.grey
+                      : Theme.of(context).colorScheme.primary,
+                  child: Icon(
+                    isRead ? Icons.notifications : Icons.notifications_active,
+                    color: Colors.white,
+                  ),
+                ),
+                title: Text(_title(notification)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_message(notification)),
+                    const SizedBox(height: 4),
+                    Text(
+                      _time(notification),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                trailing: isRead
+                    ? null
+                    : Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                onTap: () => _markAsRead(notification),
+              );
             },
           );
         },
