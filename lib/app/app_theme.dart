@@ -1,72 +1,108 @@
 import 'package:flutter/material.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 
 class AppTheme {
+  static const _lightScheme = ColorScheme(
+    brightness: Brightness.light,
+    primary: Color(0xFF146C63),
+    onPrimary: Colors.white,
+    secondary: Color(0xFFF2A900),
+    onSecondary: Color(0xFF1F1F1F),
+    error: Color(0xFFB3261E),
+    onError: Colors.white,
+    surface: Color(0xFFFBFCFA),
+    onSurface: Color(0xFF1B1F1D),
+  );
+
+  static const _darkScheme = ColorScheme(
+    brightness: Brightness.dark,
+    primary: Color(0xFF7FD8CC),
+    onPrimary: Color(0xFF003731),
+    secondary: Color(0xFFFFD36A),
+    onSecondary: Color(0xFF352900),
+    error: Color(0xFFFFB4AB),
+    onError: Color(0xFF690005),
+    surface: Color(0xFF111412),
+    onSurface: Color(0xFFE2E4E0),
+  );
+
   static ThemeData get lightTheme {
+    return _buildTheme(_lightScheme);
+  }
+
+  static ThemeData get darkTheme {
+    return _buildTheme(_darkScheme);
+  }
+
+  static ThemeData _buildTheme(ColorScheme colorScheme) {
+    final isDark = colorScheme.brightness == Brightness.dark;
+
     return ThemeData(
       useMaterial3: true,
-      primaryColor: AppColors.primaryBlue,
-      scaffoldBackgroundColor: AppColors.white,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
+      colorScheme: colorScheme,
+      primaryColor: colorScheme.primary,
+      scaffoldBackgroundColor: colorScheme.surface,
+      appBarTheme: AppBarTheme(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         elevation: 0,
+        centerTitle: false,
+        surfaceTintColor: Colors.transparent,
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: AppColors.white,
-        selectedItemColor: AppColors.primaryBlue,
-        unselectedItemColor: AppColors.mediumGray,
-        elevation: 8,
+        backgroundColor: colorScheme.surface,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.55),
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.white,
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        shadowColor: Colors.black.withOpacity(0.1),
+        color: isDark ? const Color(0xFF191D1A) : Colors.white,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shadowColor: Colors.black.withValues(alpha: 0.08),
       ),
-      buttonTheme: const ButtonThemeData(buttonColor: AppColors.primaryBlue),
+      buttonTheme: ButtonThemeData(buttonColor: colorScheme.primary),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryBlue,
-          foregroundColor: AppColors.white,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          minimumSize: const Size(48, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AppColors.primaryBlue),
+        style: TextButton.styleFrom(foregroundColor: colorScheme.primary),
       ),
-      textTheme: const TextTheme(
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: isDark ? const Color(0xFF1A1E1B) : const Color(0xFFF3F6F2),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.4),
+        ),
+      ),
+      textTheme: TextTheme(
         headlineLarge: TextStyle(
           fontWeight: FontWeight.bold,
-          color: AppColors.darkGray,
+          color: colorScheme.onSurface,
         ),
-        headlineMedium: TextStyle(color: AppColors.darkGray),
-        bodyLarge: TextStyle(color: AppColors.darkGray),
-        bodyMedium: TextStyle(color: AppColors.darkGray),
-      ),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryBlue,
-        brightness: Brightness.light,
-      ),
-    );
-  }
-
-  static ThemeData get darkTheme {
-    return ThemeData.dark().copyWith(
-      primaryColor: AppColors.primaryBlue,
-      appBarTheme: const AppBarTheme(backgroundColor: AppColors.darkBlue),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryBlue),
-      ),
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(),
-        bodyLarge: TextStyle(),
-        bodyMedium: TextStyle(),
+        headlineMedium: TextStyle(color: colorScheme.onSurface),
+        bodyLarge: TextStyle(color: colorScheme.onSurface),
+        bodyMedium: TextStyle(color: colorScheme.onSurface),
       ),
     );
   }

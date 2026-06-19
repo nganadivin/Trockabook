@@ -6,9 +6,11 @@ import '../models/category_model.dart';
 import '../models/panier_surprise_model.dart';
 import '../models/promotion_model.dart';
 import '../models/listing_model.dart';
+import 'book_service.dart';
 
 class HomeService {
   final ApiClient _apiClient = ApiClient();
+  final BookService _bookService = BookService();
 
   /// Get all categories
   Future<List<Category>> getCategories() async {
@@ -99,8 +101,8 @@ class HomeService {
       // the backend returns mixed types.  This ensures each section of the
       // home page contains only the requested transaction class.
       final filteredItems = items.where((raw) {
-        final map = raw as Map<String, dynamic>?;
-        if (map == null) return false;
+        if (raw is! Map) return false;
+        final map = Map<String, dynamic>.from(raw);
         final t = map['type']?.toString();
         return t != null && t.toLowerCase() == type.toLowerCase();
       }).toList();
@@ -112,38 +114,74 @@ class HomeService {
         );
       }
 
-      return filteredItems.map((i) {
-        final map = i as Map<String, dynamic>?;
-        if (map == null) {
-          return Listing(id: '', titre: 'Unknown', description: '',ownerId: '');
-        }
+      return await Future.wait(
+        filteredItems.map((i) async {
+          try {
+            if (i is! Map) {
+              return Listing(
+                id: '',
+                titre: 'Unknown',
+                description: '',
+                ownerId: '',
+              );
+            }
 
-        final hasTitle = map.containsKey('titre') || map.containsKey('title');
-        if (!hasTitle) {
-          final typeStr = map['type']?.toString() ?? 'transaction';
-          final statut = map['statut']?.toString() ?? '';
-          final prixDouble = (map['prix'] as num?)?.toDouble();
-          DateTime? date;
-          if (map['date'] is String) {
-            date = DateTime.tryParse(map['date'] as String);
-          } else if (map['date_creation'] is String) {
-            date = DateTime.tryParse(map['date_creation'] as String);
+            final map = Map<String, dynamic>.from(i);
+
+            final hasTitle =
+                map.containsKey('titre') || map.containsKey('title');
+
+            if (!hasTitle) {
+              final statut = map['statut']?.toString() ?? '';
+              final prixDouble = (map['prix'] as num?)?.toDouble();
+
+              Map<String, dynamic>? book;
+
+              try {
+                book = await _bookService.getBookCached(
+                  map['livre_id']?.toString() ?? '',
+                );
+              } catch (e) {
+                debugPrint('Erreur recuperation livre: $e');
+              }
+
+              DateTime? date;
+              if (map['date'] is String) {
+                date = DateTime.tryParse(map['date']);
+              } else if (map['date_creation'] is String) {
+                date = DateTime.tryParse(map['date_creation']);
+              }
+
+              return Listing(
+                id: map['id']?.toString() ?? '',
+                titre: book?['titre'] ?? 'Unknown',
+                description: statut.isNotEmpty ? 'Statut : $statut' : '',
+                prix: prixDouble,
+                image:
+                    'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&h=300&fit=crop',
+                localisation: map['localisation'] as String?,
+                date: date,
+                ownerId:
+                    map['parent_offreur_id']?.toString() ??
+                    map['user_id']?.toString() ??
+                    '',
+              );
+            }
+
+            return Listing.fromJson(map);
+          } catch (e) {
+            debugPrint('Erreur item: $e');
+
+            // 🔥 IMPORTANT : toujours retourner quelque chose
+            return Listing(
+              id: '',
+              titre: 'Erreur',
+              description: '',
+              ownerId: '',
+            );
           }
-
-          return Listing(
-            id: map['id']?.toString() ?? '',
-            titre: '[$typeStr] ${map['id']?.toString() ?? ''}',
-            description: statut.isNotEmpty ? 'Statut : $statut' : '',
-            prix: prixDouble,
-            image: null,
-            localisation: map['localisation'] as String?,
-            date: date,
-            ownerId: map['parent_offreur_id']?.toString() ?? map['user_id']?.toString() ?? '',
-          );
-        }
-
-        return Listing.fromJson(map);
-      }).toList();
+        }).toList(),
+      );
     } on DioException catch (e) {
       // Return empty list on 404 (no more filtering by old paths)
       if (e.response?.statusCode == 404 || e.response?.statusCode == 400) {
@@ -211,7 +249,8 @@ class HomeService {
         description: 'Panier surprise Panier su...',
         prix: 1500.0,
         quantiteRestante: 50,
-        image: null,
+        image:
+            'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&h=300&fit=crop',
         dateCollecte: DateTime.now().add(const Duration(days: 1)),
         localisation: 'Paris',
       ),

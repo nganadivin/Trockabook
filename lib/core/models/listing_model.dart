@@ -42,7 +42,7 @@ class Listing {
     'titre': titre,
     'description': description,
     'prix': prix,
-    'image': image,
+    'image': image ?? 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&h=300&fit=crop',
     'localisation': localisation,
     'date': date?.toIso8601String(),
   };
