@@ -28,7 +28,7 @@ class CustomIconBox extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(borderRadius),
         // L'effet Splash se dessine sur le Material
-        splashColor: Colors.white.withOpacity(0.2),
+        splashColor: Colors.white.withValues(alpha: 0.2),
         highlightColor: Colors.transparent,
         child: SizedBox(
           width: size,
