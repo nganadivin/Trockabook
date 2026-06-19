@@ -89,27 +89,6 @@ class ListingService {
     }
   }
 
-  /// Get all books within distance
-  Future<List<Map<String, dynamic>>> getBooksByDistance({
-    required double latitude,
-    required double longitude,
-    required double maxDistance, // in km
-    int page = 1,
-    int limit = 10,
-  }) async {
-    try {
-      final response = await _apiClient.get(
-        '/livres?lat=$latitude&lng=$longitude&distance=$maxDistance&page=$page&limit=$limit',
-      );
-      final List<dynamic> books = response.data is List ? response.data : [];
-      return List<Map<String, dynamic>>.from(
-        books.map((book) => Map<String, dynamic>.from(book as Map)),
-      );
-    } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Failed to fetch books by distance');
-    }
-  }
-
   // Mock data
   List<Map<String, dynamic>> _getMockExchangeBooks() {
     return [

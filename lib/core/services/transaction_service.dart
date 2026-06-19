@@ -25,21 +25,6 @@ class TransactionService {
     }
   }
 
-  /// Get all transactions for all user
-  Future<List<Map<String, dynamic>>> getAllTransactions() async {
-    try {
-      final response = await _apiClient.get('/transactions');
-      final List<dynamic> transactions = response.data is List
-          ? response.data
-          : response.data['transactions'] ?? [];
-      return List<Map<String, dynamic>>.from(
-        transactions.map((t) => Map<String, dynamic>.from(t as Map)),
-      );
-    } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Failed to fetch transactions');
-    }
-  }
-
   /// Get a specific transaction by ID
   Future<Map<String, dynamic>> getTransactionById(String transactionId) async {
     try {
@@ -56,7 +41,7 @@ class TransactionService {
   /// - `livreId`: The book ID (livre_id)
   /// - `userId`: The user ID offering the book (parent_offreur_id)
   /// - `type`: Transaction type: 'exchange', 'sell', 'donate', 'need'
-  /// - `message`: Optional message (not sent to backend if provided based on error)
+  /// - `message`: Optional legacy argument, intentionally not sent
   /// - `offeredBooks`: Not used in new backend format
   Future<Map<String, dynamic>> createTransaction({
     required String livreId,
@@ -73,21 +58,13 @@ class TransactionService {
         'type': type,
       };
 
-      // older fields kept for reference; they are ignored by backend
-      if (message != null && message.isNotEmpty) {
-        body['message'] = message;
-      }
-      if (offeredBooks != null && offeredBooks.isNotEmpty) {
-        body['offeredBooks'] = offeredBooks;
-      }
-
       // price is mandatory for the new backend contract; default to 0
       // for exchanges and allow override for sells/donations/needs.
       body['prix'] = prix ?? (type == 'exchange' ? 0 : 0);
 
       // log final body before sending so reproduction is straightforward
       if (kDebugMode) {
-        print('    -> Transaction payload: $body');
+        debugPrint('    -> Transaction payload: $body');
       }
 
       final response = await _apiClient.post('/transactions', body);

@@ -71,21 +71,4 @@ class UserService {
     }
   }
 
-  /// Get all users (admin only)
-  Future<List<Map<String, dynamic>>> getAllUsers({
-    int page = 1,
-    int limit = 10,
-  }) async {
-    try {
-      final response = await _apiClient.get('/users?page=$page&limit=$limit');
-      final List<dynamic> users = response.data is List
-          ? response.data
-          : response.data['users'] ?? [];
-      return List<Map<String, dynamic>>.from(
-        users.map((user) => Map<String, dynamic>.from(user as Map)),
-      );
-    } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Failed to fetch users');
-    }
-  }
 }

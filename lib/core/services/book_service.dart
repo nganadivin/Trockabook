@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../network/api_client.dart';
 import '../errors/exceptions.dart';
 import 'auth_service.dart';
@@ -6,15 +7,26 @@ import 'auth_service.dart';
 class BookService {
   final ApiClient _apiClient = ApiClient();
 
+// 🔥 instance unique
+  static final BookService _instance = BookService._internal();
+
+  // 🔥 constructeur privé
+  BookService._internal();
+
+  // 🔥 factory = toujours retourne la même instance
+  factory BookService() {
+    return _instance;
+  }
+  
   /// Get all books for the current user
   Future<List<Map<String, dynamic>>> getMyBooks() async {
-    print("Appel API lancé...");
+    debugPrint('Appel API lance...');
     try {
       final authService = AuthService();
 
         // Si null, on tente de recharger l'utilisateur avant d'échouer
       if (authService.currentUser == null) {
-        print("CurrentUser est null, tentative de récupération...");
+        debugPrint('CurrentUser est null, tentative de recuperation...');
         await authService.initializeUser();
       }
       
@@ -25,8 +37,7 @@ class BookService {
 
       // If user not authenticated, return empty list
       if (userId == null) {
-         print("UserId null...");
-         print("DEBUG: Contenu de currentUser: ${authService.currentUser}");
+         debugPrint('UserId null...');
         return [];
       }
 
@@ -64,10 +75,32 @@ class BookService {
   Future<Map<String, dynamic>> getBookById(String bookId) async {
     try {
       final response = await _apiClient.get('/livres/$bookId');
-      return response.data;
+       final data = response.data;
+
+      if (data is List && data.isNotEmpty) {
+        return Map<String, dynamic>.from(data.first as Map);
+      }
+
+      if (data is Map<String, dynamic>) {
+        return data;
+      } else if (data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+
+      return <String, dynamic>{};
     } on DioException catch (e) {
       throw ApiException(e.message ?? 'Failed to fetch book details');
     }
+  }
+
+final Map<String, Map<String, dynamic>> _bookCache = {};
+
+  Future<Map<String, dynamic>?> getBookCached(String id) async {
+    if (_bookCache.containsKey(id)) return _bookCache[id];
+
+    final book = await getBookById(id);
+    _bookCache[id] = book;
+    return book;
   }
 
   /// Search books
@@ -124,33 +157,6 @@ class BookService {
     }
   }
 
-  /// Create a book with legacy parameters (for backward compatibility)
-  @deprecated
-  Future<Map<String, dynamic>> createBookLegacy({
-    required String titre,
-    required String auteur,
-    required String description,
-    required String niveau,
-    required String matiere,
-    required String etat,
-    String? image,
-  }) async {
-    try {
-      final response = await _apiClient.post('/livres', {
-        'titre': titre,
-        'auteur': auteur,
-        'description': description,
-        'niveau': niveau,
-        'matiere': matiere,
-        'etat': etat,
-        if (image != null) 'image': image,
-      });
-      return response.data;
-    } on DioException catch (e) {
-      throw ApiException(e.message ?? 'Failed to create book');
-    }
-  }
-
   /// Update a book
   Future<Map<String, dynamic>> updateBook(
     String bookId, {
@@ -172,7 +178,7 @@ class BookService {
       if (etat != null) body['etat'] = etat;
       if (image != null) body['image'] = image;
 
-      final response = await _apiClient.post('/livres/$bookId', body);
+      final response = await _apiClient.patch('/livres/$bookId', body);
       return response.data;
     } on DioException catch (e) {
       throw ApiException(e.message ?? 'Failed to update book');
@@ -194,7 +200,7 @@ class BookService {
     String status,
   ) async {
     try {
-      final response = await _apiClient.post('/livres/$bookId/statut', {
+      final response = await _apiClient.patch('/livres/$bookId/statut', {
         'statut': status,
       });
       return response.data;

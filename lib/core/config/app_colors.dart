@@ -32,37 +32,3 @@ class AppColors {
     offset: Offset(0, 4),
   );
 }
-
-// ThemeData personnalisé
-ThemeData appTheme() {
-  return ThemeData(
-    useMaterial3: true,
-    primaryColor: AppColors.primaryBlue,
-    scaffoldBackgroundColor: AppColors.white,
-    appBarTheme: AppBarTheme(
-      backgroundColor: AppColors.primaryBlue,
-      foregroundColor: AppColors.white,
-      elevation: 0,
-    ),
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: AppColors.primaryBlue,
-      foregroundColor: AppColors.white,
-    ),
-    cardTheme: CardThemeData(
-      color: AppColors.white,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      shadowColor: Colors.black.withOpacity(0.1),
-    ),
-    bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: AppColors.white,
-      selectedItemColor: AppColors.primaryBlue,
-      unselectedItemColor: AppColors.mediumGray,
-      elevation: 8,
-    ),
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primaryBlue,
-      brightness: Brightness.light,
-    ),
-  );
-}
