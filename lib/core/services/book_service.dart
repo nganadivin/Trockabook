@@ -222,58 +222,6 @@ final Map<String, Map<String, dynamic>> _bookCache = {};
     }
   }
 
-  /// Get books by category
-  Future<List<Map<String, dynamic>>> getBooksByCategory(String category) async {
-    try {
-      final response = await _apiClient.get('/livres?category=$category');
-      final List<dynamic> books = response.data is List ? response.data : [];
-      return List<Map<String, dynamic>>.from(
-        books.map((book) => Map<String, dynamic>.from(book as Map)),
-      );
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        return [];
-      }
-      throw ApiException(e.message ?? 'Failed to fetch books by category');
-    }
-  }
-
-  /// Search and filter books
-  Future<List<Map<String, dynamic>>> searchWithFilters({
-    String? query,
-    String? classe,
-    String? matiere,
-    String? category,
-    double? maxDistance,
-    String? condition,
-  }) async {
-    try {
-      final params = <String, String>{};
-      if (query != null && query.isNotEmpty) params['q'] = query;
-      if (classe != null) params['classe'] = classe;
-      if (matiere != null) params['matiere'] = matiere;
-      if (category != null) params['category'] = category;
-      if (maxDistance != null) params['maxDistance'] = maxDistance.toString();
-      if (condition != null) params['etat'] = condition;
-
-      final queryString = params.entries
-          .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-      final url = '/livres${queryString.isNotEmpty ? '?$queryString' : ''}';
-
-      final response = await _apiClient.get(url);
-      final List<dynamic> books = response.data is List ? response.data : [];
-      return List<Map<String, dynamic>>.from(
-        books.map((book) => Map<String, dynamic>.from(book as Map)),
-      );
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        return [];
-      }
-      throw ApiException(e.message ?? 'Failed to search books');
-    }
-  }
-
   // Mock data for testing
   List<Map<String, dynamic>> _getMockBooks() {
     return [

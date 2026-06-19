@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/listing_service.dart';
-import '../services/book_service.dart';
 
 /// Provider for managing listing state with filtering and pagination
 class ListingProvider extends ChangeNotifier {
   final ListingService _listingService = ListingService();
-  final BookService _bookService = BookService();
 
   // State variables
   List<Map<String, dynamic>> _exchangeBooks = [];
@@ -107,29 +105,6 @@ class ListingProvider extends ChangeNotifier {
       );
     } catch (e) {
       _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // Search with filters
-  Future<List<Map<String, dynamic>>> searchWithFilters({String? query}) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final results = await _bookService.searchWithFilters(
-        query: query,
-        classe: _selectedClasse,
-        matiere: _selectedMatiere,
-        condition: _selectedCondition,
-      );
-      return results;
-    } catch (e) {
-      _errorMessage = e.toString();
-      return [];
     } finally {
       _isLoading = false;
       notifyListeners();
