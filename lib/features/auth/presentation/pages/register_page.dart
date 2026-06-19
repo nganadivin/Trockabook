@@ -23,7 +23,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _latitudeController = TextEditingController(text: '0.0');
   final _longitudeController = TextEditingController(text: '0.0');
   final _childrenNumberController = TextEditingController(text: '0');
-  final _ageController = TextEditingController(text: '0');
+  final _ageController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -88,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
     } on AuthenticationException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: ${e.message}')),
+          SnackBar(content: Text(' Erreur lors de l\'inscrition: ${e.message}')),
         );
       }
     } catch (e) {
@@ -107,7 +107,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text('Creez votre compte Trocabook')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -116,14 +116,20 @@ class _RegisterPageState extends State<RegisterPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 24),
+              Image.asset(
+                'assets/images/logos/logo1.png',
+                width: 70, // Optionnel : largeur
+                height: 70, // Optionnel : hauteur
+                fit: BoxFit.contain, // Pour remplir le cadre proprement
+              ),
               Text(
-                'Create Account',
+                'Creez votre compte Trocabook',
                 style: Theme.of(context).textTheme.headlineLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Join the Trocabook community',
+                'Rejoignez la communaute trocabook et commencez a echanger vos livres des maintenant !',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
@@ -132,21 +138,21 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 32),
               CustomTextField(
                 controller: _firstNameController,
-                label: 'First Name',
+                label: 'Nom',
                 validator: (value) =>
                     Validators.validateRequired(value, 'First Name'),
               ),
               const SizedBox(height: 16),
               CustomTextField(
                 controller: _lastNameController,
-                label: 'Last Name',
+                label: 'Prénom',
                 validator: (value) =>
                     Validators.validateRequired(value, 'Last Name'),
               ),
               const SizedBox(height: 16),
               CustomTextField(
                 controller: _townController,
-                label: 'Town',
+                label: 'Ville',
                 validator: (value) =>
                     Validators.validateRequired(value, 'Town'),
               ),
@@ -160,7 +166,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               CustomTextField(
                 controller: _phoneController,
-                label: 'Phone',
+                label: 'Téléphone',
                 keyboardType: TextInputType.phone,
                 validator: Validators.validatePhone,
               ),
@@ -175,22 +181,22 @@ class _RegisterPageState extends State<RegisterPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              CustomTextField(
-                controller: _childrenNumberController,
-                label: 'Number of Children',
-                keyboardType: TextInputType.number,
-              ),
+              // const SizedBox(height: 16),
+              // CustomTextField(
+              //   controller: _childrenNumberController,
+              //   label: 'Number of Children',
+              //   keyboardType: TextInputType.number,
+              // ),
               const SizedBox(height: 16),
               PasswordField(
                 controller: _passwordController,
-                label: 'Password',
+                label: 'Mot de passe',
                 validator: Validators.validatePassword,
               ),
               const SizedBox(height: 16),
               PasswordField(
                 controller: _confirmPasswordController,
-                label: 'Confirm Password',
+                label: 'Confirmer le mot de passe',
                 validator: _validateConfirmPassword,
               ),
               const SizedBox(height: 16),
@@ -206,7 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   Expanded(
                     child: Text(
-                      'I accept the terms and conditions',
+                      'J\'accepte les termes et conditions',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
@@ -214,7 +220,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 24),
               PrimaryButton(
-                text: 'Create Account',
+                text: 'Creez votre compte',
                 onPressed: _register,
                 isLoading: _isLoading,
               ),
@@ -222,10 +228,10 @@ class _RegisterPageState extends State<RegisterPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text('Already have an account?'),
+                  const Text('Vous avez deja un compte ?'),
                   TextButton(
                     onPressed: () => context.go('/login'),
-                    child: const Text('Sign In'),
+                    child: const Text('Se connecter'),
                   ),
                 ],
               ),
