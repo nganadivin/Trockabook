@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:trocabook_front/core/utils/validators.dart';
 import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
+import 'package:trocabook_front/core/services/auth_service.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -26,27 +28,40 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (_emailController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter your email')));
+      ).showSnackBar(const SnackBar(content: Text('Entrer votre email')));
       return;
     }
 
     setState(() => _isLoading = true);
 
-    // Simulate password reset
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-        _emailSent = true;
-      });
+    try {
+      final authService = context.read<AuthService>();
+      await authService.forgotPassword(_emailController.text.trim());
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _emailSent = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Forgot Password')),
+      appBar: AppBar(title: const Text('Mot de passe oublie'), 
+      leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -54,15 +69,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           children: [
             const SizedBox(height: 48),
             Text(
-              _emailSent ? 'Check Your Email' : 'Reset Password',
+              _emailSent ? 'Verifier un mot de passe' : 'Reinitialiser le mot de passe',
               style: Theme.of(context).textTheme.headlineLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               _emailSent
-                  ? 'We sent a password reset link to your email'
-                  : 'Enter your email address and we\'ll send you a link to reset your password',
+                  ? 'Nous avons envoyé un email avec les instructions pour réinitialiser votre mot de passe.'
+                  : 'Entrez votre adresse email pour recevoir un lien de reinitialisation',
               style: Theme.of(
                 context,
               ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
@@ -78,7 +93,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               ),
               const SizedBox(height: 24),
               PrimaryButton(
-                text: 'Send Reset Link',
+                text: 'Envoyer le lien de reinitialisation',
                 onPressed: _resetPassword,
                 isLoading: _isLoading,
               ),
@@ -86,7 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               const Icon(Icons.check_circle, size: 80, color: Colors.green),
               const SizedBox(height: 24),
               PrimaryButton(
-                text: 'Back to Login',
+                text: 'Retour à la connexion',
                 onPressed: () => context.go('/login'),
               ),
             ],
