@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
@@ -246,9 +245,6 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Démarrer un échange'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -394,13 +390,9 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
             child: ElevatedButton(
               onPressed: _proceedToStep2,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBlue,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text(
-                'Continuer',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
+              child: const Text('Continuer', style: TextStyle(fontSize: 16)),
             ),
           ),
         ],
@@ -558,19 +550,13 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitExchange,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                  ),
                   child: _isLoading
-                      ? const CircularProgressIndicator(
+                      ? CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                            Theme.of(context).colorScheme.onPrimary,
                           ),
                         )
-                      : const Text(
-                          'Créer l\'échange',
-                          style: TextStyle(color: Colors.white),
-                        ),
+                      : const Text('Créer l\'échange'),
                 ),
               ),
             ],

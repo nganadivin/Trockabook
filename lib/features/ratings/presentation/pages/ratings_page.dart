@@ -105,7 +105,9 @@ class _RatingsPageState extends State<RatingsPage> {
                           Text(
                             date,
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
                           ),

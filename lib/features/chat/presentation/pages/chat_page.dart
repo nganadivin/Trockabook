@@ -91,9 +91,9 @@ class _ChatPageState extends State<ChatPage> {
             child: Text(
               'Chat will be available once the exchange is accepted.',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ),
@@ -138,6 +138,7 @@ class _ChatPageState extends State<ChatPage> {
                         message['fromSelf'] == true;
                     final text = message['contenu'] ?? message['message'] ?? '';
                     final time = message['createdAt'] ?? '';
+                    final colorScheme = Theme.of(context).colorScheme;
                     return Align(
                       alignment: isMe
                           ? Alignment.centerRight
@@ -147,8 +148,8 @@ class _ChatPageState extends State<ChatPage> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: isMe
-                              ? Theme.of(context).primaryColor
-                              : Colors.grey[200],
+                              ? colorScheme.primary
+                              : colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -157,7 +158,9 @@ class _ChatPageState extends State<ChatPage> {
                             Text(
                               text,
                               style: TextStyle(
-                                color: isMe ? Colors.white : Colors.black,
+                                color: isMe
+                                    ? colorScheme.onPrimary
+                                    : colorScheme.onSurfaceVariant,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -165,7 +168,13 @@ class _ChatPageState extends State<ChatPage> {
                               time.toString(),
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isMe ? Colors.white70 : Colors.black54,
+                                color: isMe
+                                    ? colorScheme.onPrimary.withValues(
+                                        alpha: 0.7,
+                                      )
+                                    : colorScheme.onSurfaceVariant.withValues(
+                                        alpha: 0.7,
+                                      ),
                               ),
                             ),
                           ],
@@ -180,10 +189,12 @@ class _ChatPageState extends State<ChatPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 5,
                 ),
@@ -211,7 +222,7 @@ class _ChatPageState extends State<ChatPage> {
                 IconButton(
                   icon: const Icon(Icons.send),
                   onPressed: _sendMessage,
-                  color: Theme.of(context).primaryColor,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ],
             ),

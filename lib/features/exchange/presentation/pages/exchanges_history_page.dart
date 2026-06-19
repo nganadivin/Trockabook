@@ -35,7 +35,11 @@ class _ExchangesHistoryPage extends State<ExchangesHistoryPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 16),
@@ -56,10 +60,14 @@ class _ExchangesHistoryPage extends State<ExchangesHistoryPage> {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.swap_horiz, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('No exchanges yet'),
+                children: [
+                  Icon(
+                    Icons.swap_horiz,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('No exchanges yet'),
                 ],
               ),
             );

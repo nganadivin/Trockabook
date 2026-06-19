@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/services/chat_service.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 
 class ConversationsPage extends StatefulWidget {
   const ConversationsPage({super.key});
@@ -25,9 +24,6 @@ class _ConversationsPageState extends State<ConversationsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chats'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -45,7 +41,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 16),
@@ -67,7 +67,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.message, size: 64, color: Colors.grey),
+                  Icon(
+                    Icons.message,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   const Text('No conversations yet'),
                 ],

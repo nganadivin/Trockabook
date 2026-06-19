@@ -252,7 +252,12 @@ class _ExchangeDetailsPageState extends State<ExchangeDetailsPage> {
             Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(bookTitle),
-            Text('Owner: $owner', style: const TextStyle(color: Colors.grey)),
+            Text(
+              'Owner: $owner',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),
