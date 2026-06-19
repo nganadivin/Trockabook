@@ -16,8 +16,7 @@ import '../features/books/presentation/pages/my_books_page.dart';
 import '../features/books/presentation/pages/book_details_page.dart';
 import '../features/books/presentation/pages/edit_book_page.dart';
 import '../features/books/presentation/pages/category_listing_pages.dart';
-import '../features/search/presentation/pages/search_page.dart'
-    hide FiltersPage;
+import '../features/search/presentation/pages/search_page.dart';
 import '../features/search/presentation/pages/filters_page.dart';
 import '../features/exchange/presentation/pages/propose_exchange_page.dart';
 import '../features/exchange/presentation/pages/propose_exchange_new_page.dart';
