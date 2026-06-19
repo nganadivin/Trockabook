@@ -10,17 +10,18 @@ import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 import 'package:trocabook_front/core/models/book_category_enum.dart';
 import 'package:trocabook_front/core/config/app_colors.dart';
+import 'package:trocabook_front/core/widgets/app_snackbar.dart';
 
-class AddBookPageV2 extends StatefulWidget {
+class NewTransactionPage extends StatefulWidget {
   final BookCategory? initialCategory;
 
-  const AddBookPageV2({super.key, this.initialCategory});
+  const NewTransactionPage({super.key, this.initialCategory});
 
   @override
-  State<AddBookPageV2> createState() => _AddBookPageV2State();
+  State<NewTransactionPage> createState() => _NewTransactionPageState();
 }
 
-class _AddBookPageV2State extends State<AddBookPageV2> {
+class _NewTransactionPageState extends State<NewTransactionPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _classeController = TextEditingController();
@@ -51,6 +52,8 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
   bool _createNewBook = false;
   String? _selectedExistingBookId;
 
+  bool _showTargetListings = false;
+  String? _selectedTargetListingId;
   final List<String> _langues = ['Français', 'Anglais', 'Espagnol'];
   final List<String> _etats = ['Neuf', 'Très bon', 'Bon', 'Moyen', 'Usé'];
   final List<String> _needTypes = ['Achat', 'Échange', 'Gratuit'];
@@ -97,7 +100,147 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
     }
   }
 
-  Future<void> _addBook() async {
+  Future<void> _submitTransaction() async {
+    // Validate step 2
+    // if (!_openToProposals &&
+    //     (_desiredBookTitle == null ||
+    //         _desiredBookTitle!.isEmpty ||
+    //         _desiredBookClasse == null ||
+    //         _desiredBookClasse!.isEmpty ||
+    //         _desiredBookMatiere == null ||
+    //         _desiredBookMatiere!.isEmpty)) {
+    //   AppSnackbar.show(
+    //     context,
+    //     'Veuillez spécifier le livre ou permettre les propositions',
+    //   );
+    //   return;
+    // }
+
+    setState(() => _isLoading = true);
+    try {
+      String offeredBookId = _selectedExistingBookId ?? '';
+
+      // If adding new book, create it first
+      if (!_useExistingBook) {
+        final newBook = await _bookService.createBook(
+          titre: _titleController.text,
+          classe: _classeController.text,
+          ecole: _ecoleController.text,
+          langue: _selectedLangue ?? 'Français',
+          annee_scolaire: DateTime.now().year.toString(),
+          statut: 'Échange',
+          localisation_lat: 0.0,
+          localisation_lng: 0.0,
+          enfant_id: 'enfant_123',
+          description: _descriptionController.text,
+          matiere: _matiereController.text,
+          etat: _selectedEtat ?? 'Bon',
+        );
+        offeredBookId =
+            newBook['id']?.toString() ?? newBook['_id']?.toString() ?? '';
+        if (offeredBookId.isEmpty) {
+          throw ApiException('Impossible de créer le livre');
+        }
+      }
+
+      // If targeting an existing listing, send proposal to it
+      if (_showTargetListings && _selectedTargetListingId != null) {
+        if (!mounted) return;
+        final auth = Provider.of<AuthService>(context, listen: false);
+        if (auth.currentUser == null) {
+          await auth.initializeUser();
+        }
+
+        final currentUserId =
+            auth.currentUser?['id']?.toString() ??
+            auth.currentUser?['_id']?.toString() ??
+            auth.currentUser?['idToken']?.toString();
+        if (currentUserId == null) {
+          throw ApiException('User not authenticated');
+        }
+
+        final res = await _transactionService.createTransaction(
+          livreId: offeredBookId,
+          userId: currentUserId,
+          type: 'exchange',
+          prix: 0,
+        );
+
+        if (mounted) {
+          final txId = res['id'] ?? res['_id'];
+          AppSnackbar.show(context, 'Proposition envoyée', error: false);
+          if (txId != null) {
+            context.go('/exchange-details/$txId');
+          } else {
+            context.go('/home');
+          }
+        }
+      } else {
+        // Create new exchange annonce without targeting specific listing
+        if (!mounted) return;
+        final auth = Provider.of<AuthService>(context, listen: false);
+        if (auth.currentUser == null) {
+          await auth.initializeUser();
+        }
+
+        final currentUserId =
+            auth.currentUser?['id']?.toString() ??
+            auth.currentUser?['_id']?.toString() ??
+            auth.currentUser?['idToken']?.toString();
+
+        if (currentUserId == null) {
+          throw ApiException(
+            'User not authenticated currentUser: ${auth.currentUser}',
+          );
+        }
+
+        String type;
+
+        if (_selectedCategory == BookCategory.sell) {
+          type = 'sell';
+        } else if (_selectedCategory == BookCategory.donate) {
+          type = 'donate';
+        } else if (_selectedCategory == BookCategory.need) {
+          if (_selectedNeedType == 'Gratuit') {
+            type = 'need of free';
+          } else if (_selectedNeedType == 'Echange') {
+            type = 'need of exchange';
+          } else if (_selectedNeedType == 'Don') {
+            type = 'need of don';
+          } else {
+            type = 'need';
+          }
+        } else {
+          type = 'unknown';
+        }
+        await _transactionService.createTransaction(
+          livreId: offeredBookId,
+          userId: currentUserId,
+          type: type,
+          prix: _selectedCategory == BookCategory.sell
+              ? double.tryParse(_priceController.text) ?? 0.0
+              : 0.0,
+        );
+
+        if (mounted) {
+          AppSnackbar.show(context, 'Annonce crée avec succes', error: false);
+          context.go('/home');
+        }
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        AppSnackbar.show(context, 'Erreur: ${e.message}');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.show(context, 'Erreur inattendue: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _addTransaction() async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_children.isNotEmpty && _selectedChildId == null) {
@@ -382,7 +525,8 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
               //   ),
               //   const SizedBox(height: 16),
               // ],
-              if (_selectedCategory != BookCategory.need) ...[
+              if (_selectedCategory != BookCategory.need ||
+                  _availableBooks.isNotEmpty) ...[
                 CheckboxListTile(
                   title: const Text(
                     'Utiliser un de mes livres existants comme annonce',
@@ -415,12 +559,8 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                ]
-                  
-              ],
+                ],
 
-              
-              if (_selectedCategory != BookCategory.need)
                 CheckboxListTile(
                   title: _selectedCategory == BookCategory.need
                       ? const Text(
@@ -433,6 +573,7 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                     _useExistingBook = !_createNewBook;
                   }),
                 ),
+              ],
 
               const SizedBox(height: 16),
 
@@ -750,8 +891,12 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
               ],
               // Submit button
               PrimaryButton(
-                text: _selectedCategory == BookCategory.sell ? 'Mettre en vente' : _selectedCategory == BookCategory.need ? 'Publier le besoin' : 'Proposer en DON',
-                onPressed: _addBook,
+                text: _selectedCategory == BookCategory.sell
+                    ? 'Mettre en vente'
+                    : _selectedCategory == BookCategory.need
+                    ? 'Publier le besoin'
+                    : 'Proposer en Don',
+                onPressed: _submitTransaction,
                 isLoading: _isLoading,
               ),
             ],
