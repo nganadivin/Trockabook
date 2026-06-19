@@ -130,9 +130,9 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 8),
               Text(
                 'Rejoignez la communaute trocabook et commencez a echanger vos livres des maintenant !',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),

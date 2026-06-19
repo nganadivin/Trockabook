@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
 import 'package:trocabook_front/core/models/listing_model.dart';
 
@@ -97,9 +96,6 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle()),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -138,11 +134,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
           if (!type.startsWith("mes")) ...[
             TextButton(
               onPressed: () => context.go('/listings-more/mes $type'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.white),
-              child: Text(
-                'Voir l\'etat de mes $type',
-                style: const TextStyle(color: AppColors.white),
-              ),
+              child: Text('Voir l\'etat de mes $type'),
             ),
           ]
           
@@ -160,15 +152,23 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
 
           final items = snapshot.data ?? <Listing>[];
           if (items.isEmpty) {
+            final colorScheme = Theme.of(context).colorScheme;
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.search_off,
+                    size: 64,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     _getEmptyText(),
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    style: TextStyle(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 16,
+                    ),
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -195,8 +195,6 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                       icon: const Icon(Icons.add),
                       label: Text(_getButtonText()),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryBlue,
-                        foregroundColor: AppColors.white,
                         padding: const EdgeInsets.symmetric(
                           vertical: 12,
                           horizontal: 16,
@@ -341,6 +339,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                         : 'Untitled';
                     final desc = item.description;
                     final id = item.id;
+                    final colorScheme = Theme.of(context).colorScheme;
 
                     return GestureDetector(
                       onTap: () => context.push('/book-details/$id'),
@@ -359,7 +358,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                                     topLeft: Radius.circular(12),
                                     topRight: Radius.circular(12),
                                   ),
-                                  color: AppColors.lightGray,
+                                  color: colorScheme.surfaceContainerHighest,
                                   image: () {
                                     final url = item.image;
                                     return url != null
@@ -394,7 +393,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                                     desc,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

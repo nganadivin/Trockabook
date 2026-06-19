@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
 import 'package:trocabook_front/core/models/category_model.dart';
 import 'package:trocabook_front/core/models/listing_model.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/services/user_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -55,7 +54,6 @@ Future<void> _loadUser() async {
           body: _buildBody(),
           floatingActionButton: FloatingActionButton(
             onPressed: () => context.go('/add-book'),
-            backgroundColor: AppColors.primaryBlue,
             child: const Icon(Icons.add),
           ),
         );
@@ -66,18 +64,17 @@ Future<void> _loadUser() async {
   PreferredSizeWidget _buildAppBar(Map<String, dynamic> user, bool isLoading) {
     final pays = user['pays'] ?? user['town'] ?? '';
     final ville = user['ville'] ?? user['localisation'] ?? 'Unknown City';
+    final colorScheme = Theme.of(context).colorScheme;
 
     return AppBar(
-      backgroundColor: AppColors.white,
-      elevation: 0,
       centerTitle: false,
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Trocabook',
             style: TextStyle(
-              color: AppColors.darkGray,
+              color: colorScheme.onSurface,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
@@ -94,16 +91,16 @@ Future<void> _loadUser() async {
           else
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.location_on,
                   size: 16,
-                  color: AppColors.mediumGray,
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '$ville, $pays',
-                  style: const TextStyle(
-                    color: AppColors.mediumGray,
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -114,16 +111,16 @@ Future<void> _loadUser() async {
       actions: [
         // quick shortcut so users can start an exchange from anywhere
         IconButton(
-          icon: const Icon(Icons.swap_horiz, color: AppColors.darkGray),
+          icon: Icon(Icons.swap_horiz, color: colorScheme.onSurface),
           tooltip: 'Démarrer un échange',
           onPressed: () => context.go('/exchange-flow'),
         ),
         IconButton(
-          icon: const Icon(Icons.language, color: AppColors.darkGray),
-          onPressed: () {},
+          icon: Icon(Icons.language, color: colorScheme.onSurface),
+          onPressed: () => context.go('/map'),
         ),
         IconButton(
-          icon: const Icon(Icons.notifications_none, color: AppColors.darkGray),
+          icon: Icon(Icons.notifications_none, color: colorScheme.onSurface),
           onPressed: () => context.go('/notifications'),
         ),
       ],
@@ -190,12 +187,12 @@ Future<void> _loadUser() async {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Catégories',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.darkGray,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             // TextButton(
@@ -227,12 +224,12 @@ Future<void> _loadUser() async {
   }
 
   Widget _buildCategoryCard(Category category) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 90,
       decoration: BoxDecoration(
-        color: AppColors.lightBlue,
+        color: colorScheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppColors.lightShadow],
       ),
       child: Material(
         color: Colors.transparent,
@@ -249,10 +246,10 @@ Future<void> _loadUser() async {
                 child: Text(
                   category.nom,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.darkGray,
+                    color: colorScheme.onSurface,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -274,11 +271,11 @@ Future<void> _loadUser() async {
     String getButtonText() {
       switch (type) {
         case 'echanges':
-          return 'Démarrer un nouvel échange';
+          return 'Nouvel échange';
         case 'ventes':
-          return 'Démarrer une nouvelle vente';
+          return 'Nouvelle vente';
         case 'besoins':
-          return 'Publier un besoin';
+          return 'Nouveau besoin';
         case 'dons':
           return 'Proposer un don';
         default:
@@ -289,6 +286,7 @@ Future<void> _loadUser() async {
     return FutureBuilder<List<Listing>>(
       future: future,
       builder: (context, snapshot) {
+        final colorScheme = Theme.of(context).colorScheme;
         if (snapshot.connectionState == ConnectionState.waiting) {
           return SizedBox(
             height: 120,
@@ -307,28 +305,28 @@ Future<void> _loadUser() async {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkGray,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Row(
                   children: [
                     if (type == 'echanges')
                       IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.swap_horiz,
-                          color: AppColors.primaryBlue,
+                          color: colorScheme.primary,
                         ),
                         tooltip: 'Démarrer un échange',
                         onPressed: () => context.go('/exchange-flow'),
                       ),
                     TextButton(
                       onPressed: () => context.go('/listings-more/$type'),
-                      child: const Text(
+                      child: Text(
                         'Plus →',
-                        style: TextStyle(color: AppColors.primaryBlue),
+                        style: TextStyle(color: colorScheme.primary),
                       ),
                     ),
                   ],
@@ -347,12 +345,15 @@ Future<void> _loadUser() async {
                       Icon(
                         Icons.playlist_add,
                         size: 48,
-                        color: Colors.grey[400],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Aucun $title disponible',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       SizedBox(
@@ -379,8 +380,6 @@ Future<void> _loadUser() async {
                           icon: const Icon(Icons.add),
                           label: Text(getButtonText()),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryBlue,
-                            foregroundColor: AppColors.white,
                             padding: const EdgeInsets.symmetric(
                               vertical: 12,
                               horizontal: 16,
@@ -417,13 +416,20 @@ Future<void> _loadUser() async {
 
     final badgeText = capitalize(type);
     final userId = user['id']?.toString() ?? '';
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 260,
       height: 160,
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppColors.mediumShadow],
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Stack(
         children: [
@@ -450,19 +456,22 @@ Future<void> _loadUser() async {
                         topLeft: Radius.circular(12),
                         bottomLeft: Radius.circular(12),
                       ),
-                      color: AppColors.lightGray,
+                      color: colorScheme.surfaceContainerHighest,
                       image: item.image != null
                           ? DecorationImage(
                               image: NetworkImage(item.image!),
                               fit: BoxFit.cover,
                             )
-                          : null,
+                          : DecorationImage(
+                              image: NetworkImage("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&h=300&fit=crop"),
+                              fit: BoxFit.cover,
+                            ),
                     ),
                     child: item.image == null
-                        ? const Icon(
+                        ? Icon(
                             Icons.image,
                             size: 40,
-                            color: AppColors.mediumGray,
+                            color: colorScheme.onSurfaceVariant,
                           )
                         : null,
                   ),
@@ -475,10 +484,10 @@ Future<void> _loadUser() async {
                         children: [
                           Text(
                             item.titre,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.darkGray,
+                              color: colorScheme.onSurface,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -486,9 +495,9 @@ Future<void> _loadUser() async {
                           const SizedBox(height: 6),
                           Text(
                             item.description,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.mediumGray,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -499,27 +508,27 @@ Future<void> _loadUser() async {
                               if (item.prix != null)
                                 Text(
                                   '${item.prix!.toStringAsFixed(0)} FCFA',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.primaryBlue,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                               const Spacer(),
                               if (item.localisation != null)
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.location_on,
                                       size: 14,
-                                      color: AppColors.mediumGray,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       item.localisation!,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.mediumGray,
+                                        color: colorScheme.onSurfaceVariant,
                                       ),
                                     ),
                                   ],
@@ -541,14 +550,14 @@ Future<void> _loadUser() async {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.8),
+                color: colorScheme.primary.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 badgeText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: AppColors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -561,19 +570,19 @@ Future<void> _loadUser() async {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.8),
+                color: colorScheme.primary.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 'Votre exchange',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
-                  color: AppColors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          ) : 
+          ) :
           Positioned(
                   bottom: 4,
                   right: 4,
@@ -583,14 +592,14 @@ Future<void> _loadUser() async {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withOpacity(0.8),
+                      color: colorScheme.primary.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       badgeText,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: AppColors.white,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

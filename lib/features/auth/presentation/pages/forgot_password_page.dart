@@ -78,9 +78,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               _emailSent
                   ? 'Nous avons envoyé un email avec les instructions pour réinitialiser votre mot de passe.'
                   : 'Entrez votre adresse email pour recevoir un lien de reinitialisation',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),

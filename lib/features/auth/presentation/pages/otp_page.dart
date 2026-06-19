@@ -71,7 +71,14 @@ class _OtpPageState extends State<OtpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Phone')),
+      appBar: AppBar(
+        title: const Text('Verify Phone'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/register'),
+        ),
+      ),
+      
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -79,33 +86,33 @@ class _OtpPageState extends State<OtpPage> {
           children: [
             const SizedBox(height: 48),
             Text(
-              'Enter Verification Code',
+              'Entrez le code de verification',
               style: Theme.of(context).textTheme.headlineLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'We sent a code to $_email',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+              'Nous avons envoye un compte a  $_email',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
             CustomTextField(
               controller: _otpController,
-              label: 'Verification Code',
+              label: 'Code de verification',
               keyboardType: TextInputType.text,
               validator: (value) {
                 if (value?.isEmpty ?? true) {
-                  return 'Verification code is required';
+                  return 'Code de verification est requis';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 24),
             PrimaryButton(
-              text: 'Verify',
+              text: 'Verifier',
               onPressed: _verifyOtp,
               isLoading: _isLoading,
             ),
@@ -113,15 +120,20 @@ class _OtpPageState extends State<OtpPage> {
             TextButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Code resent to your email')),
+                  const SnackBar(content: Text('Le code vient d\'etre renvoye')),
                 );
               },
-              child: const Text('Resend Code'),
+              child: const Text('Renvoyer le code de verification'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             TextButton(
               onPressed: () => context.go('/register'),
-              child: const Text('Back to Registration'),
+              child: const Text('Retour a l\'inscription'),
+            ),
+             const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => context.go('/login'),
+              child: const Text('Se connecter'),
             ),
           ],
         ),

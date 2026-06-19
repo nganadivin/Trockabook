@@ -47,7 +47,11 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (mounted) {
         // use new helper to display a nicely styled notification box
-        AppSnackbar.show(context, 'Login failed: $e', error: true);
+        AppSnackbar.show(
+          context,
+          'Connexion échouée, verifiez vos informations $e',
+          error: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -59,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Connexion')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -68,17 +72,23 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 48),
+              Image.asset(
+                'assets/images/logos/logo1.png',
+                width: 70, // Optionnel : largeur
+                height: 70, // Optionnel : hauteur
+                fit: BoxFit.contain, // Pour remplir le cadre proprement
+              ),
               Text(
-                'Welcome Back',
+                'Bienvenue de retour !',
                 style: Theme.of(context).textTheme.headlineLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Sign in to your account',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                'Connectez-vous à votre compte',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -91,28 +101,28 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 16),
               PasswordField(
                 controller: _passwordController,
-                label: 'Password',
+                label: 'Mot de passe',
                 validator: Validators.validatePassword,
               ),
               const SizedBox(height: 24),
               PrimaryButton(
-                text: 'Login',
+                text: 'Se connecter',
                 onPressed: _login,
                 isLoading: _isLoading,
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => context.go('/forgot-password'),
-                child: const Text('Forgot Password?'),
+                child: const Text('Mot de passe oublié?'),
               ),
               const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account?"),
+                  const Text("Vous n'avez pas encore de compte?"),
                   TextButton(
                     onPressed: () => context.go('/register'),
-                    child: const Text('Sign Up'),
+                    child: const Text('S\'inscrire'),
                   ),
                 ],
               ),
