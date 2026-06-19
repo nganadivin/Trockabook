@@ -33,21 +33,32 @@ import '../features/needs/presentation/pages/needs_page.dart';
 import '../features/ratings/presentation/pages/ratings_page.dart';
 import '../features/home/presentation/pages/listings_more_page.dart';
 import '../features/home/presentation/pages/main_screen.dart';
+import '../features/transactions/presentation/pages/new_transaction_page.dart';
 
 class AppRoutes {
+  // Routes accessibles sans authentification.
+  static const Set<String> _publicRoutes = {
+    '/onboarding',
+    '/login',
+    '/register',
+    '/otp',
+    '/forgot-password',
+  };
+
   static final GoRouter router = GoRouter(
     initialLocation: '/onboarding',
     redirect: (context, state) async {
-      final authService = AuthService();
-      final bool loggedIn = await authService.isLoggedIn();
+      final bool loggedIn = await AuthService().isLoggedIn();
+      final bool isPublicRoute = _publicRoutes.contains(
+        state.matchedLocation,
+      );
 
-      // Si l'utilisateur n'est pas connecté et essaie d'aller ailleurs qu'au login
-      // if (!loggedIn &&
-      //     state.matchedLocation != '/login' &&  state.matchedLocation != '/register') {
-      //   return '/register';
-      // }
+      // Utilisateur non connecté essayant d'accéder à une route protégée.
+      if (!loggedIn && !isPublicRoute) {
+        return '/login';
+      }
 
-      // Si l'utilisateur est connecté et essaie d'aller au login, on l'envoie à l'accueil
+      // Utilisateur connecté qui retourne sur la page de login.
       if (loggedIn && state.matchedLocation == '/login') {
         return '/home';
       }
@@ -175,17 +186,17 @@ class AppRoutes {
       GoRoute(
         path: '/add-sell',
         builder: (context, state) =>
-            const AddBookPageV2(initialCategory: BookCategory.sell),
+            const NewTransactionPage(initialCategory: BookCategory.sell),
       ),
       GoRoute(
         path: '/add-donate',
         builder: (context, state) =>
-            const AddBookPageV2(initialCategory: BookCategory.donate),
+            const NewTransactionPage(initialCategory: BookCategory.donate),
       ),
       GoRoute(
         path: '/add-need',
         builder: (context, state) =>
-            const AddBookPageV2(initialCategory: BookCategory.need),
+            const NewTransactionPage(initialCategory: BookCategory.need),
       ),
       GoRoute(
         path: '/exchange-books',

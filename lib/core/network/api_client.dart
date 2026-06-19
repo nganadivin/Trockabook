@@ -1,7 +1,9 @@
-import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:math' as math;
+
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../config/api_endpoints.dart';
 
 class ApiClient {
@@ -16,31 +18,29 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Log de la requête
           if (kDebugMode) {
-            print('📡 [API REQUEST]');
-            print('   URL: ${options.baseUrl}${options.path}');
-            print('   Method: ${options.method}');
+            debugPrint('[API REQUEST]');
+            debugPrint('   URL: ${options.baseUrl}${options.path}');
+            debugPrint('   Method: ${options.method}');
           }
 
-          // Définir les en-têtes par défaut
           options.headers['Content-Type'] = 'application/json';
           options.headers['Accept'] = 'application/json';
 
-          // Ajoute automatiquement le token s'il existe
           final token = await _storage.read(key: 'idToken');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
-            if (kDebugMode)
-              print(
-                '   ✅ Token added: ${token.substring(0, math.min(20, token.length))}...',
+            if (kDebugMode) {
+              debugPrint(
+                '   Token added: ${token.substring(0, math.min(20, token.length))}...',
               );
+            }
           }
 
           if (kDebugMode) {
-            print('   Headers: ${options.headers}');
+            debugPrint('   Headers: ${_safeHeaders(options.headers)}');
             if (options.data != null) {
-              print('   Body: ${options.data}');
+              debugPrint('   Body: ${_safeBody(options.data)}');
             }
           }
 
@@ -48,27 +48,23 @@ class ApiClient {
         },
         onResponse: (response, handler) {
           if (kDebugMode) {
-            print('✅ [API RESPONSE] Status: ${response.statusCode}');
-            print('   Data: ${response.data}');
+            debugPrint('[API RESPONSE] Status: ${response.statusCode}');
+            debugPrint('   Data: ${_safeBody(response.data)}');
           }
           return handler.next(response);
         },
         onError: (DioException e, handler) async {
           if (kDebugMode) {
-            print('❌ [API ERROR]');
-            print('   Status: ${e.response?.statusCode}');
-            print('   Message: ${e.message}');
-            print(
+            debugPrint('[API ERROR]');
+            debugPrint('   Status: ${e.response?.statusCode}');
+            debugPrint('   Message: ${e.message}');
+            debugPrint(
               '   URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}',
             );
-            print('   Response: ${e.response?.data}');
-            if (e.response != null) {
-              print('   Full Response Body: ${e.response!.toString()}');
-            }
+            debugPrint('   Response: ${_safeBody(e.response?.data)}');
           }
 
           if (e.response?.statusCode == 401) {
-            // Token expiré - à améliorer avec token refresh
             await _storage.deleteAll();
           }
           return handler.next(e);
@@ -115,5 +111,26 @@ class ApiClient {
     } on DioException {
       rethrow;
     }
+  }
+
+  Map<String, dynamic> _safeHeaders(Map<String, dynamic> headers) {
+    return headers.map((key, value) {
+      if (key.toLowerCase() == 'authorization') {
+        return MapEntry(key, 'Bearer ***');
+      }
+      return MapEntry(key, value);
+    });
+  }
+
+  Object? _safeBody(Object? data) {
+    if (data is! Map) return data;
+
+    final redacted = Map<String, dynamic>.from(data);
+    for (final key in ['password', 'otp', 'token', 'idToken', 'refreshToken']) {
+      if (redacted.containsKey(key)) {
+        redacted[key] = '***';
+      }
+    }
+    return redacted;
   }
 }

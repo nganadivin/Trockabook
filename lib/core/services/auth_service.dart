@@ -8,6 +8,14 @@ class AuthService extends ChangeNotifier {
   final _storage = const FlutterSecureStorage();
   final ApiClient _apiClient = ApiClient();
 
+  static final AuthService _instance = AuthService._internal();
+
+  factory AuthService() {
+    return _instance;
+  }
+
+  AuthService._internal();
+
   // // // 1. Crée une instance interne privée
   // static final AuthService _instance = AuthService._internal();
 
@@ -28,12 +36,23 @@ class AuthService extends ChangeNotifier {
       final response = await _apiClient.get('/users/me');
       return response.data ?? {};
     } on DioException catch (e) {
-      throw AuthenticationException(
-        e.response?.data['message'] ?? 'Failed to fetch user profile',
-      );
+      throw AuthenticationException(_extractErrorMessage(e, 'Failed to fetch user profile'));
     } catch (e) {
       throw AuthenticationException('Error fetching user profile: $e');
     }
+  }
+
+  /// Extrait un message d'erreur lisible depuis une DioException, quel que
+  /// soit le type du corps de réponse renvoyé par le backend (Map, String ou null).
+  String _extractErrorMessage(DioException e, String fallback) {
+    final data = e.response?.data;
+    if (data is Map) {
+      return data['message']?.toString() ?? e.message ?? fallback;
+    }
+    if (data is String && data.isNotEmpty) {
+      return data;
+    }
+    return e.message ?? fallback;
   }
 
   /// Initialise l'utilisateur au démarrage de l'app
@@ -45,7 +64,7 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("Erreur initialisation: $e");
+      debugPrint('Erreur initialisation: $e');
       await logout();
     }
   }
@@ -62,17 +81,15 @@ class AuthService extends ChangeNotifier {
     String password,
   ) async {
     try {
-      print('🔄 Starting login attempt for email: $email');
+      debugPrint('Starting login attempt for email: $email');
 
       final payload = {'email': email, 'password': password};
 
-      print('📤 Sending login request to /auth/login');
-      print('📦 Payload: $payload');
+      debugPrint('Sending login request to /auth/login');
 
       final response = await _apiClient.post('/auth/login', payload);
 
-      print('✅ Login successful!');
-      print('📦 Response: ${response.data}');
+      debugPrint('Login successful.');
 
       final data = response.data ?? {};
       if (data['idToken'] != null) {
@@ -89,13 +106,13 @@ class AuthService extends ChangeNotifier {
         throw AuthenticationException('No token received from server');
       }
     } on DioException catch (e) {
-      print('❌ DioException caught in signInWithEmailAndPassword:');
-      print('   Status Code: ${e.response?.statusCode}');
-      print('   Message: ${e.message}');
-      print(
+      debugPrint('DioException caught in signInWithEmailAndPassword:');
+      debugPrint('   Status Code: ${e.response?.statusCode}');
+      debugPrint('   Message: ${e.message}');
+      debugPrint(
         '   Request URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}',
       );
-      print('   Response Body: ${e.response?.data}');
+      debugPrint('   Response Body: ${e.response?.data}');
 
       String errorMessage = e.response?.data is Map
           ? e.response?.data['message'] ?? e.message ?? 'Login failed'
@@ -103,7 +120,7 @@ class AuthService extends ChangeNotifier {
 
       throw AuthenticationException(errorMessage);
     } catch (e) {
-      print('❌ Generic exception in signInWithEmailAndPassword: $e');
+      debugPrint('Generic exception in signInWithEmailAndPassword: $e');
       throw AuthenticationException(e.toString());
     }
   }
@@ -125,8 +142,7 @@ class AuthService extends ChangeNotifier {
     required bool cgu_valide,
   }) async {
     try {
-      print('🔄 Starting user registration...');
-      print('📧 Email: $email');
+      debugPrint('Starting user registration for email: $email');
 
       final payload = {
         'firstName': firstName,
@@ -144,28 +160,23 @@ class AuthService extends ChangeNotifier {
         'cgu_valide': cgu_valide,
       };
 
-      print('📤 Sending registration request to /users/register');
-      print('📦 Payload: $payload');
+      debugPrint('Sending registration request to /users/register');
 
       final response = await _apiClient.post('/users/register', payload);
 
-      print('✅ Registration successful!');
-      print('📦 Response: ${response.data}');
+      debugPrint('Registration successful.');
 
       return response.data;
     } on DioException catch (e) {
-      print('❌ DioException caught in createUser:');
-      print('   Status Code: ${e.response?.statusCode}');
-      print('   Message: ${e.message}');
-      print(
+      debugPrint('DioException caught in createUser:');
+      debugPrint('   Status Code: ${e.response?.statusCode}');
+      debugPrint('   Message: ${e.message}');
+      debugPrint(
         '   Request URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}',
       );
-      print('   Request Method: ${e.requestOptions.method}');
-      print('   Request Headers: ${e.requestOptions.headers}');
-      print('   Response Status: ${e.response?.statusCode}');
-      print('   Response Headers: ${e.response?.headers}');
-      print('   Response Body: ${e.response?.data}');
-      print('   Response String: ${e.response?.toString()}');
+      debugPrint('   Request Method: ${e.requestOptions.method}');
+      debugPrint('   Response Status: ${e.response?.statusCode}');
+      debugPrint('   Response Body: ${e.response?.data}');
 
       // Extraire le message d'erreur
       String errorMessage = 'Registration failed';
@@ -183,8 +194,7 @@ class AuthService extends ChangeNotifier {
 
       throw AuthenticationException(errorMessage);
     } catch (e) {
-      print('❌ Generic exception in createUser: $e');
-      print('   Stack trace: ${StackTrace.current}');
+      debugPrint('Generic exception in createUser: $e');
       throw AuthenticationException('Error during registration: $e');
     }
   }
@@ -195,7 +205,7 @@ class AuthService extends ChangeNotifier {
       // Appel optionnel à l'API pour notifier la déconnexion
       await _apiClient.post('/auth/logout', {});
     } catch (e) {
-      print('Error calling logout endpoint: $e');
+      debugPrint('Error calling logout endpoint: $e');
     }
 
     await _storage.deleteAll();
@@ -239,9 +249,7 @@ class AuthService extends ChangeNotifier {
 
       return updatedUser;
     } on DioException catch (e) {
-      throw AuthenticationException(
-        e.response?.data['message'] ?? 'Failed to update profile',
-      );
+      throw AuthenticationException(_extractErrorMessage(e, 'Failed to update profile'));
     } catch (e) {
       throw AuthenticationException(e.toString());
     }
@@ -253,7 +261,7 @@ class AuthService extends ChangeNotifier {
       await _apiClient.post('/auth/forgot-password', {'email': email});
     } on DioException catch (e) {
       throw AuthenticationException(
-        e.response?.data['message'] ?? 'Failed to process forgot password',
+        _extractErrorMessage(e, 'Failed to process forgot password'),
       );
     } catch (e) {
       throw AuthenticationException(e.toString());
@@ -266,17 +274,15 @@ class AuthService extends ChangeNotifier {
     required String otp,
   }) async {
     try {
-      print('🔄 Verifying OTP for email: $email');
+      debugPrint('Verifying OTP for email: $email');
 
       final payload = {'email': email, 'otp': otp};
 
-      print('📤 Sending OTP verification to /auth/verify-otp');
-      print('📦 Payload: $payload');
+      debugPrint('Sending OTP verification to /auth/verify-otp');
 
       final response = await _apiClient.post('/auth/verify-otp', payload);
 
-      print('✅ OTP verification successful!');
-      print('📦 Response: ${response.data}');
+      debugPrint('OTP verification successful.');
 
       final data = response.data ?? {};
       if (data['idToken'] != null) {
@@ -293,13 +299,13 @@ class AuthService extends ChangeNotifier {
         throw AuthenticationException('No token received from server');
       }
     } on DioException catch (e) {
-      print('❌ DioException caught in verifyOtp:');
-      print('   Status Code: ${e.response?.statusCode}');
-      print('   Message: ${e.message}');
-      print(
+      debugPrint('DioException caught in verifyOtp:');
+      debugPrint('   Status Code: ${e.response?.statusCode}');
+      debugPrint('   Message: ${e.message}');
+      debugPrint(
         '   Request URL: ${e.requestOptions.baseUrl}${e.requestOptions.path}',
       );
-      print('   Response Body: ${e.response?.data}');
+      debugPrint('   Response Body: ${e.response?.data}');
 
       String errorMessage = e.response?.data is Map
           ? e.response?.data['message'] ??
@@ -309,7 +315,7 @@ class AuthService extends ChangeNotifier {
 
       throw AuthenticationException(errorMessage);
     } catch (e) {
-      print('❌ Generic exception in verifyOtp: $e');
+      debugPrint('Generic exception in verifyOtp: $e');
       throw AuthenticationException(e.toString());
     }
   }
