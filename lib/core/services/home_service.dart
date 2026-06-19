@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:dio/dio.dart';
 import '../network/api_client.dart';
 import '../errors/exceptions.dart';
