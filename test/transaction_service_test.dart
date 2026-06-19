@@ -50,4 +50,20 @@ void main() {
     expect(client.lastBody!['prix'], 42.5);
     expect(client.lastBody!['type'], 'sell');
   });
+
+  test('createTransaction does not send legacy fields', () async {
+    final client = DummyApiClient();
+    final service = TransactionService(client);
+
+    await service.createTransaction(
+      livreId: 'L1',
+      userId: 'U1',
+      type: 'exchange',
+      message: 'hello',
+      offeredBooks: ['B1'],
+    );
+
+    expect(client.lastBody!.containsKey('message'), isFalse);
+    expect(client.lastBody!.containsKey('offeredBooks'), isFalse);
+  });
 }
