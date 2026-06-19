@@ -104,7 +104,10 @@ class _EditBookPageState extends State<EditBookPage> {
         title: const Text('Edit Book'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
+            icon: Icon(
+              Icons.delete,
+              color: Theme.of(context).colorScheme.error,
+            ),
             onPressed: () {
               showDialog(
                 context: context,
@@ -123,9 +126,11 @@ class _EditBookPageState extends State<EditBookPage> {
                         Navigator.of(dialogContext).pop();
                         _deleteBook();
                       },
-                      child: const Text(
+                      child: Text(
                         'Delete',
-                        style: TextStyle(color: Colors.red),
+                        style: TextStyle(
+                          color: Theme.of(dialogContext).colorScheme.error,
+                        ),
                       ),
                     ),
                   ],

@@ -48,7 +48,11 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 16),
@@ -87,11 +91,11 @@ class _BookDetailsPageState extends State<BookDetailsPage> {
                     return Container(
                       height: 250,
                       width: double.infinity,
-                      color: Colors.grey[300],
-                      child: const Icon(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Icon(
                         Icons.image,
                         size: 80,
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     );
                   },

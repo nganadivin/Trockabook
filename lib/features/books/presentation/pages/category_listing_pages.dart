@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/widgets/cards/book_card.dart';
 import 'package:trocabook_front/core/providers/listing_provider.dart';
 
@@ -34,9 +33,6 @@ class _ExchangeBooksPageState extends State<ExchangeBooksPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Livres à échanger'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -88,12 +84,14 @@ class _ExchangeBooksPageState extends State<ExchangeBooksPage> {
                         Icon(
                           Icons.swap_horiz,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Aucun livre à échanger',
-                          style: TextStyle(color: Colors.grey[600]),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -168,9 +166,6 @@ class _SellBooksPageState extends State<SellBooksPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Livres à vendre'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -188,11 +183,17 @@ class _SellBooksPageState extends State<SellBooksPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_bag, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.shopping_bag,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Aucun livre à vendre',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -270,9 +271,6 @@ class _DonateBooksPageState extends State<DonateBooksPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Livres à donner'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -290,11 +288,17 @@ class _DonateBooksPageState extends State<DonateBooksPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.favorite,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Aucun livre à donner',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -322,7 +326,9 @@ class _DonateBooksPageState extends State<DonateBooksPage> {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppColors.lightGray,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             image: book['image'] != null
                                 ? DecorationImage(
                                     image: NetworkImage(book['image']),
@@ -354,7 +360,9 @@ class _DonateBooksPageState extends State<DonateBooksPage> {
                               book['classe'] ?? 'N/A',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -393,9 +401,6 @@ class _NeedBooksPageState extends State<NeedBooksPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Besoins de livres'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -413,11 +418,17 @@ class _NeedBooksPageState extends State<NeedBooksPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.search,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Aucun besoin actuellement',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/widgets/cards/book_card.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 
 class MyBooksPage extends StatefulWidget {
   const MyBooksPage({super.key});
@@ -33,9 +32,6 @@ class _MyBooksPageState extends State<MyBooksPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mes livres'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -64,7 +60,11 @@ class _MyBooksPageState extends State<MyBooksPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text('Error: ${snapshot.error}'),
                   const SizedBox(height: 16),
@@ -86,7 +86,11 @@ class _MyBooksPageState extends State<MyBooksPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.book, size: 64, color: Colors.grey),
+                  Icon(
+                    Icons.book,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   const Text('No books yet'),
                   const SizedBox(height: 16),

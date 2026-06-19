@@ -172,9 +172,11 @@ class _AddBookPageState extends State<AddBookPage> {
                 ),
                 const SizedBox(height: 16),
               ] else ...[
-                const Text(
+                Text(
                   'No child registered. The book will be added with a placeholder child.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],

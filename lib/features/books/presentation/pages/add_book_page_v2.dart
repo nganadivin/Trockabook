@@ -9,7 +9,6 @@ import 'package:trocabook_front/core/services/transaction_service.dart';
 import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 import 'package:trocabook_front/core/models/book_category_enum.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 
 class AddBookPageV2 extends StatefulWidget {
   final BookCategory? initialCategory;
@@ -293,9 +292,6 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
               ? 'Publier un besoin'
               : 'Ajouter un livre',
         ),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
@@ -348,10 +344,14 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                         _priceController.clear();
                       });
                     },
-                    backgroundColor: AppColors.lightGray,
-                    selectedColor: AppColors.primaryBlue,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    selectedColor: Theme.of(context).colorScheme.primary,
                     labelStyle: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   );
                 }).toList(),
@@ -615,9 +615,11 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                     },
                   )
                 else
-                  const Text(
+                  Text(
                     'Aucun livre disponible. Ajoutez un livre d\'abord.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 const SizedBox(height: 24),
               ],
@@ -738,11 +740,13 @@ class _AddBookPageV2State extends State<AddBookPageV2> {
                       },
                     )
                   else if (_useExistingBook)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Text(
                         'Aucun livre disponible. Ajoutez un livre d\'abord.',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   const SizedBox(height: 16),
