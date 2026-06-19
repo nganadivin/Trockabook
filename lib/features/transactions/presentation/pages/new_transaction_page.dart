@@ -122,6 +122,11 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
 
       // If adding new book, create it first
       if (!_useExistingBook) {
+        final enfantId =
+            _selectedChildId ??
+            (_children.isNotEmpty
+                ? _children.first['id']?.toString() ?? 'enfant_123'
+                : 'enfant_123');
         final newBook = await _bookService.createBook(
           titre: _titleController.text,
           classe: _classeController.text,
@@ -131,7 +136,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
           statut: 'Échange',
           localisation_lat: 0.0,
           localisation_lng: 0.0,
-          enfant_id: 'enfant_123',
+          enfant_id: enfantId,
           description: _descriptionController.text,
           matiere: _matiereController.text,
           etat: _selectedEtat ?? 'Bon',
@@ -154,7 +159,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         final currentUserId =
             auth.currentUser?['id']?.toString() ??
             auth.currentUser?['_id']?.toString() ??
-            auth.currentUser?['idToken']?.toString();
+            auth.currentUser?['uid']?.toString();
         if (currentUserId == null) {
           throw ApiException('User not authenticated');
         }
@@ -186,7 +191,7 @@ class _NewTransactionPageState extends State<NewTransactionPage> {
         final currentUserId =
             auth.currentUser?['id']?.toString() ??
             auth.currentUser?['_id']?.toString() ??
-            auth.currentUser?['idToken']?.toString();
+            auth.currentUser?['uid']?.toString();
 
         if (currentUserId == null) {
           throw ApiException(

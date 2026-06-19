@@ -81,12 +81,15 @@ class _ConversationsPageState extends State<ConversationsPage> {
               final chat = chats[index];
               final lastMessage = chat['lastMessage'] ?? 'No messages yet';
               final timestamp = chat['updatedAt'] ?? 'Just now';
+              final participantName = chat['participantName']?.toString();
+              final initial = (participantName != null &&
+                      participantName.isNotEmpty)
+                  ? participantName[0].toUpperCase()
+                  : 'U';
 
               return ListTile(
                 leading: CircleAvatar(
-                  child: Text(
-                    (chat['participantName'] ?? 'U')[0].toUpperCase(),
-                  ),
+                  child: Text(initial),
                 ),
                 title: Text(
                   chat['participantName'] ?? 'Conversation ${index + 1}',

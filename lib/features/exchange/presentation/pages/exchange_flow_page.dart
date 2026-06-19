@@ -6,6 +6,7 @@ import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/home_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
 import 'package:trocabook_front/core/services/auth_service.dart';
+import 'package:trocabook_front/core/services/children_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
 import 'package:trocabook_front/core/widgets/app_snackbar.dart';
 import 'package:trocabook_front/core/widgets/inputs/custom_text_field.dart';
@@ -21,6 +22,8 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
   final BookService _bookService = BookService();
   final HomeService _homeService = HomeService();
   final TransactionService _transactionService = TransactionService();
+  final ChildrenService _childrenService = ChildrenService();
+  List<Map<String, dynamic>> _children = [];
 
   // Step 1: Choose offered book
   int _currentStep = 1;
@@ -56,7 +59,17 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
   void initState() {
     super.initState();
     _loadAvailableBooks();
+    _loadChildren();
     _exchangeListingsFuture = _homeService.getEchanges();
+  }
+
+  Future<void> _loadChildren() async {
+    try {
+      final list = await _childrenService.getMyChildren();
+      if (mounted) setState(() => _children = list);
+    } catch (e) {
+      debugPrint('Failed to load children: $e');
+    }
   }
 
   @override
@@ -129,6 +142,9 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
 
       // If adding new book, create it first
       if (!_useExistingBook) {
+        final enfantId = _children.isNotEmpty
+            ? _children.first['id']?.toString() ?? 'enfant_123'
+            : 'enfant_123';
         final newBook = await _bookService.createBook(
           titre: _titleController.text,
           classe: _classeController.text,
@@ -138,7 +154,7 @@ class _ExchangeFlowPageState extends State<ExchangeFlowPage> {
           statut: 'Échange',
           localisation_lat: 0.0,
           localisation_lng: 0.0,
-          enfant_id: 'enfant_123',
+          enfant_id: enfantId,
           description: _descriptionController.text,
           matiere: _matiereController.text,
           etat: _selectedEtat ?? 'Bon',

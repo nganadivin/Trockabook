@@ -64,6 +64,12 @@ class _OnboardingPageState extends State<OnboardingPagePresenter> {
   final PageController _pageController = PageController(initialPage: 0);
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: AnimatedContainer(
@@ -186,7 +192,6 @@ class _OnboardingPageState extends State<OnboardingPagePresenter> {
                       onPressed: () {
                         if (_currentPage == widget.pages.length - 1) {
                           context.go('/login');
-                        ;
                         } else {
                           _pageController.animateToPage(
                             _currentPage + 1,

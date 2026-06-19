@@ -6,6 +6,7 @@ import 'package:trocabook_front/core/services/book_service.dart';
 import 'package:trocabook_front/core/services/transaction_service.dart';
 import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/errors/exceptions.dart';
+import 'package:trocabook_front/core/models/listing_model.dart';
 
 class ProposeExchangeNewPage extends StatefulWidget {
   const ProposeExchangeNewPage({super.key});
@@ -32,6 +33,12 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
     super.initState();
     _listingsFuture = _homeService.getEchanges();
     _myBooksFuture = _bookService.getMyBooks();
+  }
+
+  @override
+  void dispose() {
+    _messageCtrl.dispose();
+    super.dispose();
   }
 
   void _toggleOffer(String id) {
@@ -71,10 +78,12 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
           Navigator.of(context).pop();
       }
     } on ApiException catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Erreur: ${e.message}')));
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Erreur inattendue: $e')));
@@ -138,12 +147,10 @@ class _ProposeExchangeNewPageState extends State<ProposeExchangeNewPage> {
                             '');
                         title = (it['titre'] ?? it['title'] ?? '').toString();
                         subtitle = (it['description'] ?? '').toString();
-                      } else {
-                        // Fallback for Listing model instances
-                        final dyn = it as dynamic;
-                        id = (dyn.id?.toString() ?? dyn._id?.toString() ?? '');
-                        title = (dyn.titre ?? dyn.title ?? '').toString();
-                        subtitle = (dyn.description ?? '').toString();
+                      } else if (it is Listing) {
+                        id = it.id;
+                        title = it.titre;
+                        subtitle = it.description;
                       }
 
                       return RadioListTile<String>(
