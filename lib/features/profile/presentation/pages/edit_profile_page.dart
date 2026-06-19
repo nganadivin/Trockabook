@@ -33,12 +33,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final auth = context.read<AuthService>();
       final user = auth.currentUser ?? await _userService.getCurrentUser();
+      if (!mounted) return;
       _nameController.text =
           '${user['firstName'] ?? ''} ${user['lastName'] ?? ''}'.trim();
       _emailController.text = user['email'] ?? '';
       _phoneController.text = user['telephone'] ?? user['phone'] ?? '';
       _cityController.text = user['ville'] ?? user['location'] ?? '';
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      AppSnackbar.show(
+        context,
+        'Impossible de charger votre profil: $e',
+        error: true,
+      );
+    }
   }
 
   @override
@@ -63,11 +71,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
         phone: _phoneController.text,
         ville: _cityController.text,
       );
+      if (!mounted) return;
       AppSnackbar.show(context, 'Profile updated successfully', error: false);
       Navigator.of(context).pop();
     } on ApiException catch (e) {
+      if (!mounted) return;
       AppSnackbar.show(context, 'Update failed: ${e.message}', error: true);
     } catch (e) {
+      if (!mounted) return;
       AppSnackbar.show(context, 'Unexpected error: $e', error: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);

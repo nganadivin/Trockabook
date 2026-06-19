@@ -22,6 +22,7 @@ class _MyBooksPageState extends State<MyBooksPage> {
   }
 
   void _refreshBooks() {
+    if (!mounted) return;
     setState(() {
       _booksFuture = _bookService.getMyBooks();
     });

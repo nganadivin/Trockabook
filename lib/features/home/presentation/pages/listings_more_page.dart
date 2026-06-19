@@ -57,7 +57,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
       case 'dons':
         return 'Dons';
       default:
-        return '';
+        return widget.type;
     }
   }
 
@@ -93,6 +93,7 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
 
   @override
   Widget build(BuildContext context) {
+    String type = widget.type;
     return Scaffold(
       appBar: AppBar(
         title: Text(_getTitle()),
@@ -104,12 +105,47 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
           onPressed: () => context.go('/home'),
         ),
         actions: [
-          if (widget.type == 'echanges')
+          if (widget.type == 'echanges') ...[
             IconButton(
               icon: const Icon(Icons.swap_horiz),
               tooltip: 'Démarrer un échange',
               onPressed: () => context.go('/exchange-flow'),
             ),
+          ] else ...[
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Ajouter',
+              onPressed: () {
+                switch (widget.type) {
+                  case 'ventes':
+                    context.go('/add-sell');
+                    break;
+                  case 'besoins':
+                    context.go('/add-need');
+                    break;
+                  case 'dons':
+                    context.go('/add-donate');
+                    break;
+                  default:
+                    context.go('/add-book-v2');
+                }
+              },
+            ),
+          ],
+          SizedBox(
+            width: 8,
+          ),
+          if (!type.startsWith("mes")) ...[
+            TextButton(
+              onPressed: () => context.go('/listings-more/mes $type'),
+              style: TextButton.styleFrom(foregroundColor: AppColors.white),
+              child: Text(
+                'Voir l\'etat de mes $type',
+                style: const TextStyle(color: AppColors.white),
+              ),
+            ),
+          ]
+          
         ],
       ),
       body: FutureBuilder<List<dynamic>>(
@@ -209,18 +245,18 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                     IconButton(
                       icon: const Icon(Icons.filter_list),
                       onPressed: () async {
+                        final classeCtrl = TextEditingController(
+                          text: _filterClasse,
+                        );
+                        final matiereCtrl = TextEditingController(
+                          text: _filterMatiere,
+                        );
+                        final distanceCtrl = TextEditingController(
+                          text: _filterMaxDistance?.toString(),
+                        );
                         final res = await showDialog<Map<String, dynamic>>(
                           context: context,
                           builder: (ctx) {
-                            final classeCtrl = TextEditingController(
-                              text: _filterClasse,
-                            );
-                            final matiereCtrl = TextEditingController(
-                              text: _filterMatiere,
-                            );
-                            final distanceCtrl = TextEditingController(
-                              text: _filterMaxDistance?.toString(),
-                            );
                             return AlertDialog(
                               title: const Text('Filtres'),
                               content: Column(
@@ -264,7 +300,10 @@ class _ListingsMorePageState extends State<ListingsMorePage> {
                             );
                           },
                         );
-                        if (res != null) {
+                        classeCtrl.dispose();
+                        matiereCtrl.dispose();
+                        distanceCtrl.dispose();
+                        if (res != null && mounted) {
                           setState(() {
                             _filterClasse =
                                 (res['classe'] as String?)?.isEmpty ?? true
