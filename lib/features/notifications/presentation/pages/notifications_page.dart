@@ -131,11 +131,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
               return ListTile(
                 leading: CircleAvatar(
                   backgroundColor: isRead
-                      ? Colors.grey
+                      ? Theme.of(context).colorScheme.surfaceContainerHighest
                       : Theme.of(context).colorScheme.primary,
                   child: Icon(
                     isRead ? Icons.notifications : Icons.notifications_active,
-                    color: Colors.white,
+                    color: isRead
+                        ? Theme.of(context).colorScheme.onSurfaceVariant
+                        : Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 title: Text(_title(notification)),
@@ -146,7 +148,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     const SizedBox(height: 4),
                     Text(
                       _time(notification),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -155,8 +160,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     : Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
                         ),
                       ),

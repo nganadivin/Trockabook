@@ -67,9 +67,9 @@ class _PublicProfilePageState extends State<PublicProfilePage> {
                   const SizedBox(height: 8),
                   Text(
                     location,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 24),

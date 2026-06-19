@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trocabook_front/core/widgets/cards/book_card.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 import 'package:trocabook_front/core/services/book_service.dart';
 import 'filters_page.dart';
 
@@ -148,12 +147,9 @@ bool _isInitialized = false;
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-
         title: _selectedCategory != null
             ? Text('Categorie : ${_selectedCategory!}')
             : const Text('Recherche'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -277,10 +273,10 @@ bool _isInitialized = false;
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
                           size: 64,
-                          color: Colors.red,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                         const SizedBox(height: 16),
                         Text('Error: $_errorMessage'),

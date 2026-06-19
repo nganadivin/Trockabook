@@ -51,7 +51,10 @@ class _FiltersPageState extends State<FiltersPage> {
                 _maxDistance = 10.0;
               });
             },
-            child: const Text('Reset', style: TextStyle(color: Colors.white)),
+            child: Text(
+              'Reset',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
           ),
         ],
       ),

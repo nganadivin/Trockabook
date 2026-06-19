@@ -5,7 +5,6 @@ import 'package:trocabook_front/core/widgets/buttons/primary_button.dart';
 import 'package:trocabook_front/core/widgets/buttons/custom_icon_box.dart';
 import 'package:trocabook_front/core/services/auth_service.dart';
 import 'package:trocabook_front/core/services/user_service.dart';
-import 'package:trocabook_front/core/config/app_colors.dart';
 
 class MyProfilePage extends StatefulWidget {
   const MyProfilePage({super.key});
@@ -29,8 +28,6 @@ class _MyProfilePageState extends State<MyProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -55,7 +52,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 16),
                   Text('Error loading profile: ${snapshot.error}'),
                   const SizedBox(height: 16),
@@ -97,7 +98,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                       Text(
                         ville,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -106,14 +107,18 @@ class _MyProfilePageState extends State<MyProfilePage> {
                         children: [
                           CustomIconBox(
                             icon: Icons.person_add_alt_1,
-                            backgroundColor: Colors.green.withOpacity(0.3),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.secondary.withValues(alpha: 0.85),
                             onTap: () => context.go('/my-books'),
                             borderRadius: 15,
                           ),
                           const SizedBox(width: 16.0),
                           CustomIconBox(
                             icon: Icons.message_rounded,
-                            backgroundColor: Colors.green.withOpacity(0.3),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.secondary.withValues(alpha: 0.85),
                             onTap: () => context.go("/chats"),
                             borderRadius: 15,
                           ),
@@ -144,7 +149,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                         label: const Text('Logout'),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
-                          foregroundColor: Colors.red,
+                          foregroundColor: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ],
@@ -172,13 +177,16 @@ class _TopPortion extends StatelessWidget {
         children: [
           Container(
             margin: const EdgeInsets.only(bottom: 50),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                colors: [Color(0xff0043ba), Color(0xff006df1)],
+                colors: [
+                  Theme.of(context).colorScheme.primary,
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.75),
+                ],
               ),
-              borderRadius: BorderRadius.only(
+              borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(50),
                 bottomRight: Radius.circular(50),
               ),
@@ -197,9 +205,14 @@ class _TopPortion extends StatelessWidget {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 4,
+                          ),
                           image: DecorationImage(
                             fit: BoxFit.cover,
                             image: NetworkImage(profileImage),
@@ -207,10 +220,12 @@ class _TopPortion extends StatelessWidget {
                           ),
                         ),
                         child: profileImage.isEmpty
-                            ? const Icon(
+                            ? Icon(
                                 Icons.person,
                                 size: 80,
-                                color: Colors.grey,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
                               )
                             : null,
                       ),
@@ -219,16 +234,16 @@ class _TopPortion extends StatelessWidget {
                         right: 0,
                         child: CircleAvatar(
                           radius: 22,
-                          backgroundColor: Colors.white,
+                          backgroundColor: Theme.of(context).colorScheme.surface,
                           child: Container(
                             margin: const EdgeInsets.all(3.0),
-                            decoration: const BoxDecoration(
-                              color: Color(0xff2196F3),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.check,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               size: 18,
                             ),
                           ),

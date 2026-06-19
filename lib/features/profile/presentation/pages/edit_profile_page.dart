@@ -106,13 +106,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     bottom: 0,
                     right: 0,
                     child: CircleAvatar(
-                      backgroundColor: Theme.of(context).primaryColor,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       radius: 18,
                       child: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.camera_alt,
                           size: 18,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                         onPressed: () {
                           // Handle image picker

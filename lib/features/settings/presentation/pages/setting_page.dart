@@ -145,7 +145,7 @@ class _SingleSection extends StatelessWidget {
         ),
         Container(
           width: double.infinity,
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.05),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
           child: Column(children: children),
         ),
       ],
